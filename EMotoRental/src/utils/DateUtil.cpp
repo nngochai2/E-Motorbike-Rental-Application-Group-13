@@ -49,14 +49,19 @@ namespace EMotoRental {
 		return start <= end;
 	}
 
+	DateUtil::TimePoint DateUtil::addDays(const TimePoint& timePoint, int days) {
+		return timePoint + std::chrono::hours(days * 24);
+	}
+
+
 	std::tm DateUtil::timePointToTm(const TimePoint &timePoint) {
-		std::time_t time = std::chrono::system_clock::to_time_t(timePoint);
+		const std::time_t time = std::chrono::system_clock::to_time_t(timePoint);
 		return *std::localtime(&time);
 	}
 
 	DateUtil::TimePoint DateUtil::tmToTimePoint(const std::tm &tm) {
 		std::tm tm_copy = tm;
-		std::time_t time = std::mktime(&tm_copy);
+		const std::time_t time = std::mktime(&tm_copy);
 		return std::chrono::system_clock::from_time_t(time);
 	}
 }
