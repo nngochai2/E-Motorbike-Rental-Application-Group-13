@@ -4,8 +4,8 @@
 
 #pragma once
 namespace EmotoRental {
-    enum class RentalStatus {
-        ACTIVE,
-
-    }
+	enum class RentalStatus {
+		ACTIVE,
+		COMPLETED
+	};
 }
