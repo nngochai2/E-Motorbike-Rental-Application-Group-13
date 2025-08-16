@@ -15,4 +15,5 @@ add_executable(E_Motorbike_Rental_Application_Group_13
         EMotoRental/src/utils/DateUtil.cpp
         EMotoRental/src/utils/DateUtil.h
         EMotoRental/src/main.cpp
-        EMotoRental/src/entities/Member.h)
+        EMotoRental/src/entities/Member.h
+        EMotoRental/src/entities/User.cpp)
