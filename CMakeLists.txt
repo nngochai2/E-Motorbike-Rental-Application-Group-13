@@ -14,4 +14,5 @@ add_executable(E_Motorbike_Rental_Application_Group_13
         EMotoRental/src/enums/RequestStatus.h
         EMotoRental/src/utils/DateUtil.cpp
         EMotoRental/src/utils/DateUtil.h
-        EMotoRental/src/main.cpp)
+        EMotoRental/src/main.cpp
+        EMotoRental/src/entities/Member.h)
