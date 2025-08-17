@@ -11,8 +11,8 @@ namespace EMotoRental
     class Member : public User
     {
     private:
-        double creditPoint;
-        double renterRating;
+        double creditPoints{};
+        double renterRating{};
         std::string ownedMotorbikeId;
         std::vector<std::string> rentalHistory;
 
@@ -32,9 +32,9 @@ namespace EMotoRental
         void updateRenterRating(double newRating);
 
         // Motorbike ownership
-        std::string getOwnerMotorbikeId() const;
-        void setOwnerMotorbikeId(const std::string& id);
-        bool hasOwedMotorbikeId() const;
+        std::string getOwnedMotorbikeId() const;
+        void setOwnedMotorbikeId(const std::string& id);
+        bool hasOwnedMotorbike() const;
 
         // Rental eligibility
         bool canRentMotorbike(double cost, double requiredRating, int engineSize) const;
