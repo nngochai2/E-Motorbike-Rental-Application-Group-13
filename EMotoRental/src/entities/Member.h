@@ -44,7 +44,7 @@ namespace EMotoRental
         std::string getUserType() const override;
         void displayInfo() const override;
         std::string toCSVString() const override;
-        static Member* fromCSVSString(const std::string& csvData);
+        static Member* fromCSVString(const std::string& csvData);
 
         // Rental history
         void addRentalToHistory(const std::string& rentalId);
