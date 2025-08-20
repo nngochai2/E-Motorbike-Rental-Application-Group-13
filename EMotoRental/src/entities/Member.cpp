@@ -91,7 +91,7 @@ namespace EMotoRental
         }
 
         // Check license for motorbikes > 50cc
-        if (engineSize > 50 && !hasValidLicense())
+        if (engineSize > 50 && !hasValidLicense)
         {
             return false;
         }
@@ -143,15 +143,38 @@ namespace EMotoRental
         return oss.str();
     }
 
-    Member* Member::fromCSVSString(const std::string& csvData)
-    {
+   Member* Member::fromCSVString(const std::string& csvData) {
+        std::istringstream iss(csvData);
+        std::string token;
+        std::vector<std::string> tokens;
+
+        // Parse CSV line
+        while (std::getline(iss, token, ',')) {
+            tokens.push_back(token);
+        }
+
+        if (tokens.size() < 12) {
+            return nullptr; // Invalid data
+        }
+
+        auto* member = new Member(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4]);
+        member->setIdNumber(tokens[5]);
+        member->setLicense(tokens[6], tokens[7] == "1");
+        member->setVerified(tokens[8] == "1");
+        member->creditPoints = std::stod(tokens[9]);
+        member->renterRating = std::stod(tokens[10]);
+        member->ownedMotorbikeId = tokens[11];
+
+        return member;
     }
 
     void Member::addRentalToHistory(const std::string& rentalId)
     {
+        rentalHistory.push_back(rentalId);
     }
 
     std::vector<std::string> Member::getRentalHistory() const
     {
+        return rentalHistory;
     }
 }
