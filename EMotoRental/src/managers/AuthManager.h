@@ -38,7 +38,10 @@ namespace EMotoRental
         // User management
         Member* findMemberByUsername(const std::string& username) const;
         // Admin* findAdminByUsername(const std::string& username) const;
+        void addMember(Member* member);
+        // void addAdmin(Admin* admin);
         std::vector<Member*> getAllMembers() const;
+        // std::vector<Admin*> getAllAdmins() const;
 
         // Date persistence (using CSV methods)
         bool loadAllMembers();
