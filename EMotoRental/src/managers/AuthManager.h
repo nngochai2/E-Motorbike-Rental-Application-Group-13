@@ -41,7 +41,7 @@ namespace EMotoRental
         std::vector<Member*> getAllMembers() const;
 
         // Date persistence (using CSV methods)
-        bool loadAllMember();
+        bool loadAllMembers();
         bool saveAllMembers();
         bool loadAllAdmins();
         bool saveAllAdmins();
