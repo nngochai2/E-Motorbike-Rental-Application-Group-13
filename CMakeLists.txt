@@ -21,4 +21,6 @@ add_executable(E_Motorbike_Rental_Application_Group_13
         EMotoRental/src/managers/AuthManager.h
         EMotoRental/src/managers/AuthManager.cpp
         EMotoRental/src/utils/FileHandler.cpp
-        EMotoRental/src/utils/FileHandler.h)
+        EMotoRental/src/utils/FileHandler.h
+        EMotoRental/src/utils/InputHelper.cpp
+        EMotoRental/src/utils/InputHelper.h)
