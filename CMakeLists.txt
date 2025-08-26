@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.31)
 project(E_Motorbike_Rental_Application_Group_13)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 include_directories(EMotoRental/src/entities)
 include_directories(EMotoRental/src/enums)
@@ -17,4 +17,8 @@ add_executable(E_Motorbike_Rental_Application_Group_13
         EMotoRental/src/main.cpp
         EMotoRental/src/entities/Member.h
         EMotoRental/src/entities/User.cpp
-        EMotoRental/src/entities/Member.cpp)
+        EMotoRental/src/entities/Member.cpp
+        EMotoRental/src/managers/AuthManager.h
+        EMotoRental/src/managers/AuthManager.cpp
+        EMotoRental/src/utils/FileHandler.cpp
+        EMotoRental/src/utils/FileHandler.h)
