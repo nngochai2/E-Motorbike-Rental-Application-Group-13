@@ -3,7 +3,7 @@
 //
 
 #pragma once
-namespace EmotoRental {
+namespace EMotoRental {
 	enum class RentalStatus {
 		ACTIVE,
 		COMPLETED
