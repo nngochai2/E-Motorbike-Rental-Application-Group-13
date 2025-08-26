@@ -22,11 +22,6 @@ namespace EMotoRental
         static bool confirmAction(const std::string& message);
         static int getMenuChoice(int minChoice, int maxChoice);
 
-        // Validation methods
-        static bool validatePasswordStrength(const std::string& password);
-        static bool validateEmail(const std::string& email);
-        static bool validatePhoneNumber(const std::string& phoneNumber);
-
         // Display methods
         static void displayError(const std::string& message);
         static void displaySuccess(const std::string& message);
