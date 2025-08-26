@@ -58,7 +58,7 @@ namespace EMotoRental
 
     std::string FileHandler::readFromFile(const std::string& fileName) {
         try {
-            // Check if file exist
+            // Check if a file exists
             if (!fileExists(fileName)) {
                 std::cout << "FileHandler: File does not exist " << fileName << std::endl;
                 return "";
@@ -109,7 +109,7 @@ namespace EMotoRental
             // Ensure directory exists
             ensureDataDirectory();
 
-            // Create empty file
+            // Create an empty file
             std::ofstream file(fileName);
             if (!file.is_open()) {
                 std::cerr << "FileHandler: Failed to open file for writing " << fileName << std::endl;
@@ -123,6 +123,7 @@ namespace EMotoRental
         catch (std::exception& e) {
             std::cerr << "FileHandler: Exception while creating file " << fileName
                 << ": " << e.what() << std::endl;
+            return false;
         }
     }
 
@@ -141,7 +142,7 @@ namespace EMotoRental
                 return true; // Empty file, no need to back up
             }
 
-            // Write to backup file
+            // Write to a backup file
             std::ofstream backup(backupName);
             if (!backup.is_open()) {
                 std::cerr << "FileHandler: Failed to create backup file: " << backupName << std::endl;
@@ -168,7 +169,7 @@ namespace EMotoRental
      * @param line the CSV line to parse
      * @return std::vector<std::string> containing the parsed tokens
      */
-    std::vector<std::string> FileHandler::parseCSVFile(const std::string& line) {
+    std::vector<std::string> FileHandler::parseCSVLine(const std::string& line) {
         std::vector<std::string> tokens;
         std::string token;
         bool inQuotes = false;
@@ -240,14 +241,30 @@ namespace EMotoRental
 
     // =========================================== DIRECTORY OPERATIONS ================================================
 
-    bool FileHandler::createDirectory(const std::string& fileName) {
+    bool FileHandler::createDirectory(const std::string& dirPath) {
         try {
             // Use C++17 file system
-            std::filesystem::path path(fileName);
+            std::filesystem::path path(dirPath);
+
+            if (std::filesystem::exists(path)) {
+                return true; // Directory already exists
+            }
+
+            bool success = std::filesystem::create_directories(path);
+
+            if (success) {
+                std::cout << "FileHandler: Created directory: " << dirPath << std::endl;
+            } else {
+                std::cerr << "FileHandler: Failed to create directory " << dirPath << std::endl;
+            }
+
+            return success;
+        } catch (const std::exception& e) {
+            std::cerr << "FileHandler: Exception while creating directory " << dirPath
+                        << ": " << e.what() << std::endl;
+            return false;
         }
     }
-
-
 
     bool FileHandler::ensureDataDirectory() {
         return createDirectory("data");

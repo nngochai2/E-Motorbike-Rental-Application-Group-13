@@ -12,7 +12,7 @@ namespace EMotoRental
     AuthManager::AuthManager() : currentUser(nullptr)
     {
         // Add default admin account for system management
-        addDefaultAdmin();
+        // addDefaultAdmin();
 
         // Try to load existing data
         loadAllMembers();

@@ -54,7 +54,7 @@ namespace EMotoRental
 
     private:
         // Helper methods
-        void addDefaultAdmin();
+        // void addDefaultAdmin();
         bool userExists(const std::string& username) const;
     };
 }

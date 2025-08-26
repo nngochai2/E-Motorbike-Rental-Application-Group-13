@@ -19,11 +19,11 @@ namespace EMotoRental
         static bool createBackup(const std::string& fileName);
 
         // CSV parsing utils
-        static std::vector<std::string> parseCSVFile(const std::string& line);
+        static std::vector<std::string> parseCSVLine(const std::string& line);
         static std::string formatCSVLine(const std::vector<std::string>& data);
 
         // Directory operations
-        static bool createDirectory(const std::string& fileName);
+        static bool createDirectory(const std::string& dirPath);
         static bool ensureDataDirectory();
     };
 }
