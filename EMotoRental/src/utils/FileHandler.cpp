@@ -213,26 +213,31 @@ namespace EMotoRental
         for (size_t i = 0; i < data.size(); ++i) {
             std::string field = data[i];
 
-            // Escape quotes and wrap in quotes if contains comma or quote
-            if (field.find(',') != std::string::npos ||
-                field.find('"') != std::string::npos ||
-                field.find('\n') != std::string::npos) {
+            // Check if field needs quoting (contains comma, quote, or newline)
+            const bool needsQuoting = field.find(',') != std::string::npos ||
+                               field.find('"') != std::string::npos ||
+                               field.find('\n') != std::string::npos;
 
-                // Replace quotes with double quotes
-                size_t pos = 0;
-                while ((pos = field.find('"')) != std::string::npos) {
-                    field.replace(pos, 1, "\"\"");
-                    pos += 2;
+            if (needsQuoting) {
+                // Escape existing quotes by doubling them
+                std::string escapedField = "";
+                for (const char c : field) {
+                    if (c == '"') {
+                        escapedField += "\"\"";  // Double the quote
+                    } else {
+                        escapedField += c;
+                    }
                 }
 
-                // Wrap in quotes
-                field = "\"" + field + "\"";
+                // Wrap the escaped field in quotes
+                field = "\"" + escapedField + "\"";
             }
 
             oss << field;
 
+            // Add comma separator (except for last field)
             if (i < data.size() - 1) {
-                oss << ", ";
+                oss << ",";
             }
         }
 

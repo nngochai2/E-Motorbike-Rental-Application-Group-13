@@ -21,8 +21,8 @@ namespace EMotoRental
         // Authentication
         User* login(const std::string& username, const std::string& password);
         void logout();
-        User* getCurrentUser() const;
-        bool isLoggedIn() const;
+        [[nodiscard]] User* getCurrentUser() const;
+        [[nodiscard]] bool isLoggedIn() const;
 
         // Registration
         bool registerMember(
@@ -33,28 +33,29 @@ namespace EMotoRental
             const std::string& phone
         );
 
-        bool isUsernameAvailable(const std::string& username) const;
+        [[nodiscard]] bool isUsernameAvailable(const std::string& username) const;
 
         // User management
-        Member* findMemberByUsername(const std::string& username) const;
+        [[nodiscard]] Member* findMemberByUsername(const std::string& username) const;
         // Admin* findAdminByUsername(const std::string& username) const;
         void addMember(Member* member);
         // void addAdmin(Admin* admin);
-        std::vector<Member*> getAllMembers() const;
+        [[nodiscard]] std::vector<Member*> getAllMembers() const;
         // std::vector<Admin*> getAllAdmins() const;
 
         // Date persistence (using CSV methods)
         bool loadAllMembers();
-        bool saveAllMembers();
-        bool loadAllAdmins();
-        bool saveAllAdmins();
+        bool saveAllMembers() const;
+        // bool loadAllAdmins();
+        // bool saveAllAdmins();
 
         // Validation
-        bool validatePasswordStrength(const std::string& password) const;
+        static bool validatePasswordStrength(const std::string& password) ;
 
     private:
         // Helper methods
         // void addDefaultAdmin();
-        bool userExists(const std::string& username) const;
+        [[nodiscard]] bool userExists(const std::string& username) const;
+        void cleanupMemory();
     };
 }
