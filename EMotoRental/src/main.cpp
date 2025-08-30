@@ -5,6 +5,10 @@
 #include <iostream>
 #include "utils/DateUtil.h"
 #include "utils/FileHandler.h"
+#include "entities/Motorbike.h"
+#include "entities/Member.h"
+#include "entities/RentalRequest.h"
+#include "entities/Rental.h"
 
 using namespace EMotoRental;
 
@@ -48,6 +52,74 @@ int main() {
     // Test file reading
     std::cout << "\n--- Testing File Reading ---" << std::endl;
     std::string readContent = FileHandler::readFromFile("data/test.csv");
+    
+    // Test Motorbike, RentalRequest, and Rental classes
+    std::cout << "\n=== Testing Motorbike, RentalRequest, and Rental Classes ===" << std::endl;
+    
+    // Test our new classes
+    
+    // Test Motorbike creation and listing
+    std::cout << "\n--- Testing Motorbike Class ---" << std::endl;
+    // Create a test motorbike
+    auto* testBike = new Motorbike("Honda", "PCX", "Red", 150, "AB123", "Ho Chi Minh", "testuser");
+    std::cout << "Created motorbike with ID: " << testBike->getMotorbikeId() << std::endl;
+    
+    // Test listing the motorbike
+    auto startDate = DateUtil::getCurrentTime();
+    auto endDate = DateUtil::addDays(startDate, 14);  // Available for 2 weeks
+    bool listSuccess = testBike->listForRent(startDate, endDate, 50.0, 2.0);
+    std::cout << "Listing motorbike: " << (listSuccess ? "Success" : "Failed") << std::endl;
+    
+    // Display motorbike details
+    testBike->displayDetails();
+    
+    // Test CSV conversion
+    std::string bikeCSV = testBike->toCSVString();
+    std::cout << "Motorbike CSV: " << bikeCSV << std::endl;
+    
+    // Test fromCSVString
+    auto* restoredBike = Motorbike::fromCSVString(bikeCSV);
+    if (restoredBike) {
+        std::cout << "Restored motorbike ID: " << restoredBike->getMotorbikeId() << std::endl;
+    }
+    
+    // Test RentalRequest creation
+    std::cout << "\n--- Testing RentalRequest Class ---" << std::endl;
+    // Create a test rental request
+    auto rentalStart = DateUtil::addDays(DateUtil::getCurrentTime(), 1); // Start tomorrow
+    auto rentalEnd = DateUtil::addDays(rentalStart, 3);  // Rent for 3 days
+    auto* request = new RentalRequest("renterUser", testBike->getMotorbikeId(), 
+                                    rentalStart, rentalEnd, 150.0);  // 3 days at 50 CP per day
+    
+    std::cout << "Created request with ID: " << request->getRequestId() << std::endl;
+    request->displayRequest();
+    
+    // Test CSV conversion
+    std::string requestCSV = request->toCSVString();
+    std::cout << "Request CSV: " << requestCSV << std::endl;
+    
+    // Test approving the request
+    std::cout << "\n--- Testing Rental Creation ---" << std::endl;
+    auto* rental = request->approve();
+    if (rental) {
+        std::cout << "Created rental with ID: " << rental->getRentalId() << " from request " << request->getRequestId() << std::endl;
+        rental->displayDetails();
+        
+        // Test rental completion
+        rental->complete();
+        std::cout << "Rental status after completion: " << (rental->getStatus() == RentalStatus::COMPLETED ? "COMPLETED" : "ACTIVE") << std::endl;
+        
+        // Test CSV conversion
+        std::string rentalCSV = rental->toCSVString();
+        std::cout << "Rental CSV: " << rentalCSV << std::endl;
+        
+        delete rental;
+    }
+    
+    // Clean up
+    delete testBike;
+    delete restoredBike;
+    delete request;
     std::cout << "File reading: " << (readContent.empty() ? "Failed" : "Success") << std::endl;
     std::cout << "Content length: " << readContent.length() << " characters" << std::endl;
 
