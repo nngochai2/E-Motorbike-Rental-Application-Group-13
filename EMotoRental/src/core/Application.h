@@ -4,7 +4,7 @@
 
 #pragma once
 #include "ConsoleView.h"
-#include "../managers/AuthManager.h"
+#include "../managers/DataManager.h"
 
 namespace EMotoRental
 {
@@ -12,7 +12,7 @@ namespace EMotoRental
     {
     private:
         ConsoleView* view;
-        AuthManager* authManager;
+        DataManager* dataManager;
         bool isRunning;
 
     public:
@@ -30,10 +30,10 @@ namespace EMotoRental
         void handleAdminFlow();
 
         // Authentication flows
-        bool handleMemberLogin();
-        bool handleAdminLogin();
-        bool handleMemberRegistration();
-        void handleLogout();
+        bool handleMemberLogin() const;
+        bool handleAdminLogin() const;
+        void handleMemberRegistration() const;
+        void handleLogout() const;
 
         // Menu handlers
         void handleGuestMenu();
