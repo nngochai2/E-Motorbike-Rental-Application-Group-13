@@ -4,7 +4,6 @@
 
 #pragma once
 #include "AuthManager.h"
-#include "../utils/FileHandler.h"
 #include <string>
 #include <vector>
 
@@ -34,34 +33,34 @@ namespace EMotoRental
         // RentalManager* getRentalManager() const; // TODO
 
         // Data lifecycle
-        bool initializeSystem();
-        bool loadAllData();
+        static bool initializeSystem();
+        bool loadAllData() const;
         bool saveAllData();
-        bool shutdown();
+        void shutdown();
 
         // Individual entity operations (efficient updates)
-        bool saveMember(Member* member);
-        bool loadMember(const std::string& username, Member*& member);
-        bool deleteMember(const std::string& username);
-        bool updateMember(Member* member);
+        static bool saveMember(const Member* member);
+        static bool loadMember(const std::string& username, Member*& member);
+        static bool deleteMember(const std::string& username);
+        static bool updateMember(const Member* member);
 
-        bool saveAdmin(Admin admin);
-        bool loadAdmin(const std::string& username, Admin*& admin);
+        static bool saveAdmin(const Admin* admin);
+        static bool loadAdmin(const std::string& username, Admin*& admin);
 
         // Data integrity
-        bool validateDataConsistency();
-        void cleanupOrphanedFiles();
+        static bool validateDataConsistency();
+        static void cleanupOrphanedFiles();
 
         // System utils
-        bool createDirectoryStructure();
-        std::vector<std::string> listMembers() const;
-        std::vector<std::string> listAdmins() const;
+        static bool createDirectoryStructure();
+        static std::vector<std::string> listMembers();
+        static std::vector<std::string> listAdmins();
 
     private:
         // Helper methods
-        std::string getMemberFilePath(const std::string& username) const;
-        std::string getAdminFilePath(const std::string& username) const;
-        bool fileExists(const std::string& filename) const;
-        void logDataOperation(const std::string& operation, const std::string details) const;
+        static std::string getMemberFilePath(const std::string& username);
+        static std::string getAdminFilePath(const std::string& username);
+        static bool fileExists(const std::string& filename);
+        static void logDataOperation(const std::string& operation, const std::string& details);
     };
 }

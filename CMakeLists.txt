@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.31)
 project(E_Motorbike_Rental_Application_Group_13)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 
 include_directories(EMotoRental/src/entities)
 include_directories(EMotoRental/src/enums)
