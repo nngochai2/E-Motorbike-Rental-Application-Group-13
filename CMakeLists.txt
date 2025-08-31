@@ -25,4 +25,10 @@ add_executable(E_Motorbike_Rental_Application_Group_13
         EMotoRental/src/utils/InputHelper.cpp
         EMotoRental/src/utils/InputHelper.h
         EMotoRental/src/core/ConsoleView.cpp
-        EMotoRental/src/core/ConsoleView.h)
+        EMotoRental/src/core/ConsoleView.h
+        EMotoRental/src/core/Application.cpp
+        EMotoRental/src/core/Application.h
+        EMotoRental/src/managers/DataManager.cpp
+        EMotoRental/src/managers/DataManager.h
+        EMotoRental/src/entities/Admin.cpp
+        EMotoRental/src/entities/Admin.h)

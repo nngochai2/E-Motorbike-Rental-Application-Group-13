@@ -5,7 +5,7 @@
 
 namespace EMotoRental
 {
-    Admin::Admin() : User("admin", "", "Administrator", "", "") 
+    Admin::Admin() : User("admin", "", "Administrator", "", "")
     {
         // Default admin with placeholder values
         setVerified(true); // Admin is always considered verified
