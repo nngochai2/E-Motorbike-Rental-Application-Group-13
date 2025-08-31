@@ -35,7 +35,7 @@ namespace EMotoRental
         std::cout << "\n";
     }
 
-    int ConsoleView::getUserTypChoice() {
+    int ConsoleView::getUserTypeChoice() {
         displayUserTypeOptions();
         return InputHelper::getMenuChoice(0, 3); // 0 = Exit, 1 = Guest, 2 = Member, 3 = Admin
     }

@@ -19,7 +19,7 @@ namespace EMotoRental
 
         // Welcome and Main Screens
         static void displayWelcomeScreen();
-        static int getUserTypChoice();
+        static int getUserTypeChoice();
         static void displayMainMenu(const std::string& userType);
 
         // Authentication Screens
