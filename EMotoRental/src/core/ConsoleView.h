@@ -18,43 +18,43 @@ namespace EMotoRental
         ~ConsoleView();
 
         // Welcome and Main Screens
-        void displayWelcomeScreen() const;
-        int getUserTypChoice() const;
-        void displayMainMenu(const std::string& userType) const;
+        static void displayWelcomeScreen();
+        static int getUserTypChoice();
+        static void displayMainMenu(const std::string& userType);
 
         // Authentication Screens
-        std::string getUsername() const;
-        std::string getPassword() const;
-        bool getRegistrationData(std::string& username, std::string& password, std::string& fullName,
-                                std::string& email, std::string& phone) const;
+        static std::string getUsername();
+        static std::string getPassword();
+        static bool getRegistrationData(std::string& username, std::string& password, std::string& fullName,
+                                        std::string& email, std::string& phone);
 
         // Member Screens
-        void displayMemberDashboard(Member* member) const;
-        void displayMemberMenu() const;
+        static void displayMemberDashboard(const Member* member);
+        static void displayMemberMenu();
 
         // Admin Screens
-        void displayAdminMenu() const;
-        void displayAllMembers(const std::vector<Member*>& members) const;
+        static void displayAdminMenu();
+        static void displayAllMembers(const std::vector<Member*>& members);
 
         // Guest Screens
-        void displayGuestMenu() const;
+        static void displayGuestMenu();
 
         // Credit Management Screens
-        bool getCreditTopUpData(double& amount, std::string& password) const;
-        bool getProfileUpdateData(std::string& email, std::string& phone) const;
-        bool getPasswordChangeData(std::string& oldPass, std::string& newPass) const;
+        static bool getCreditTopUpData(double& amount, std::string& password);
+        static bool getProfileUpdateData(std::string& email, std::string& phone);
+        static bool getPasswordChangeData(std::string& oldPass, std::string& newPass);
 
         // Display utilities (Pure display - No input)
-        void displaySeparator() const;
-        void clearScreen() const;
-        void displayHeader(const std::string& title) const;
-        void displaySubHeader(const std::string& subtitle) const;
-        void displayFooter() const;
+        static void displaySeparator();
+        static void clearScreen();
+        static void displayHeader(const std::string& title);
+        static void displaySubHeader(const std::string& subtitle);
+        static void displayFooter();
 
     private:
         // Private display helpers
-        void displayUserTypeOptions() const;
-        void displayAccountOverview() const;
-        void displayRentalSection(const std::string& title, const std::string& message) const;
+        static void displayUserTypeOptions();
+        static void displayAccountOverview(const Member* member);
+        static void displayRentalSection(const std::string& title, const std::string& message);
     };
 }

@@ -47,9 +47,5 @@ namespace EMotoRental
         virtual std::string getUserType() const = 0;
         virtual void displayInfo() const = 0;
         virtual std::string toCSVString() const = 0;
-
-    protected:
-        // Helper for password validation
-        static bool isPasswordStrong(const std::string& password) ;
     };
 }
