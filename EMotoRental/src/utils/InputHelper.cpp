@@ -146,39 +146,29 @@ namespace EMotoRental
         std::string password;
 
         #ifdef _WIN32
-        // Windows implementation using conio.h
-        char ch;
-        while ((ch = _getch() != 'r')) { // Enter key
-            if (ch == '\b') { // Backspace
-                if (!password.empty()) {
-                    password.pop_back();
-                    std::cout << "\b \b"; // Move back, print space, move back
-                }
-            } else if (ch >= 32 && ch <= 126) {
-                password += ch;
-                std::cout << "*";
-            }
-        }
-        std::cout << std::endl;
-
-        #else
-        // Linux/Mac implementation using termios.h
-        while ((ch = getchar()) != '\n' && ch != '\r') {
-            if (ch == 127 || ch == '\b') {  // Backspace
-                if (!password.empty()) {
-                    password.pop_back();
-                    std::cout << "\b \b";
+            // Windows implementation using conio.h
+            #include <conio.h>
+            char ch;
+            while ((ch = _getch()) != '\r' && ch != '\n') {  // ✅ Fixed condition
+                if (ch == '\b' || ch == 127) { // Backspace
+                    if (!password.empty()) {
+                        password.pop_back();
+                        std::cout << "\b \b"; // Move back, print space, move back
+                        std::cout.flush();
+                    }
+                } else if (ch >= 32 && ch <= 126) {  // Printable characters
+                    password += ch;
+                    std::cout << "*";
                     std::cout.flush();
                 }
-            } else if (ch >= 32 && ch <= 126) {  // Printable characters
-                password += ch;
-                std::cout << '*';
-                std::cout.flush();
             }
-        }
+            std::cout << std::endl;
 
-        tcsetattr(STDIN_FILENO, TCSAFLUSH, &oldTermios);
-        std::cout << std::endl;
+        #else
+            // Linux/Mac implementation - simplified version
+            std::cout << "(Password will be visible): ";
+            std::getline(std::cin, password);
+
         #endif
 
         return password;
