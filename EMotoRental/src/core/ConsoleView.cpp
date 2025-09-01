@@ -16,7 +16,8 @@ namespace EMotoRental
     // ========================================== WELCOME AND MAIN SCREENS =============================================
 
     void ConsoleView::displayWelcomeScreen() {
-        clearScreen();
+        // Remove this to ignore inconsistent performances
+        // clearScreen();
 
         std::cout << "\n";
         std::cout << "EEET2482/EEET2653/COSC2082/COSC2721 GROUP PROJECT\n";
@@ -25,7 +26,7 @@ namespace EMotoRental
         std::cout << "Instructor: Dr Ling Huo Chong, Dr Ushik Shrestha, Dr Tri Huynh\n";
         std::cout << "Group: Group No. 13\n";
         std::cout << "\n";
-        std::cout << "Group Members: 4";
+        std::cout << "Group Members: 4\n";
         std::cout << "s3978281, Nguyen Ngoc Hai\n";
         std::cout << "XXXXXXX, [Student Name 2]\n";
         std::cout << "XXXXXXX, [Student Name 3]\n";
@@ -47,7 +48,7 @@ namespace EMotoRental
             displayGuestMenu();
         } else if (userType == "Member") {
             displayMemberMenu();
-        } else if (userType == "Student") {
+        } else if (userType == "Admin") {
             displayAdminMenu();
         }
     }
