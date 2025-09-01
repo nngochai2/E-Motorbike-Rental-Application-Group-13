@@ -41,7 +41,7 @@ namespace EMotoRental
         void handleAdminMenu();
 
         // Member feature handlers
-        void handleMemberDashboard();
+        void handleMemberDashboard() const;
         void handleProfileUpdate();
         void handlePasswordChange();
         void handleCreditTopUp();
@@ -51,15 +51,15 @@ namespace EMotoRental
         void handleRentalHistory();
 
         // Admin feature handlers
-        void handleViewAllMembers();
+        void handleViewAllMembers() const;
         void handleViewAllMotorbikes();
-        void handleViewMemberDetails();
-        void handleSystemStatistics();
+        void handleViewMemberDetails() const;
+        void handleSystemStatistics() const;
         void handleDataManagement();
 
         // Utility methods
         void exitApplication();
-        void displaySystemInfo();
-        bool confirmCriticalAction(const std::string& action);
+        void displaySystemInfo() const;
+        static bool confirmCriticalAction(const std::string& action);
     };
 }
