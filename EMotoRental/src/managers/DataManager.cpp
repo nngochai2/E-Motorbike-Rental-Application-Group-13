@@ -13,11 +13,11 @@
 namespace EMotoRental
 {
     // Static member definitions
-    const std::string DataManager::DATA_DIR = "data/";
-    const std::string DataManager::MEMBERS_DIR = "data/members/";
-    const std::string DataManager::ADMINS_DIR = "data/admins/";
-    const std::string DataManager::MOTORBIKES_DIR = "data/motorbikes/";
-    const std::string DataManager::RENTALS_DIR = "data/rentals/";
+    const std::string DataManager::DATA_DIR = "EMotoRental/data/";
+    const std::string DataManager::MEMBERS_DIR = "EMotoRental/data/members/";
+    const std::string DataManager::ADMINS_DIR = "EMotoRental/data/admins/";
+    const std::string DataManager::MOTORBIKES_DIR = "EMotoRental/data/motorbikes/";
+    const std::string DataManager::RENTALS_DIR = "EMotoRental/data/rentals/";
 
     DataManager::DataManager() {
         authManager = nullptr;
