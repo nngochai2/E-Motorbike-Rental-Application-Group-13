@@ -43,10 +43,6 @@ namespace EMotoRental
         {
             return false;
         }
-        if (!isPasswordStrong(newPass))
-        {
-            return false;
-        }
         password = newPass;
         return true;
     }
@@ -83,24 +79,5 @@ namespace EMotoRental
     void User::setIdNumber(const std::string& id)
     {
         idNumber = id;
-    }
-
-    bool User::isPasswordStrong(const std::string& password)
-    {
-        if (password.length() < 8) return false;
-
-        bool hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false;
-
-        for (char c : password)
-        {
-            if (c >= 'A' && c <= 'Z') hasUpper = true;
-            else if (c >= 'a' && c <= 'z') hasLower = true;
-            else if (c >= '0' && c <= '9') hasDigit = true;
-            else if (c == '!' || c == '@' || c == '#' || c == '$' ||
-                c == '%' || c == '^' || c == '&' || c == '*')
-                hasSpecial = true;
-        }
-
-        return hasUpper && hasLower && hasDigit && hasSpecial;
     }
 }

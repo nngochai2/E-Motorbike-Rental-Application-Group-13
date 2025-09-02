@@ -5,28 +5,19 @@
 #include "AuthManager.h"
 #include <iostream>
 #include <sstream>
-#include <algorithm>
 
 #include "FileHandler.h"
 
 namespace EMotoRental
 {
     AuthManager::AuthManager() : currentUser(nullptr) {
-        // Add a default admin account for system management
-        // addDefaultAdmin();
+        // Add a default admin account (in memory - Saved by DataManager for system management
+        addDefaultAdmin();
 
-        // Try to load existing data
-        loadAllMembers();
-        // loadAllAdmins();
-
-        std::cout << "AuthManager initialized with " << members.size() << " members" << std::endl;
+        std::cout << "AuthManager initialized." << std::endl;
     }
 
     AuthManager::~AuthManager() {
-        // Save all data before destruction
-        saveAllMembers();
-        // saveAllAdmins();
-
         // Clean up memory
         cleanupMemory();
 
@@ -49,7 +40,12 @@ namespace EMotoRental
             return currentUser;
         }
 
-        // Check admins (later)
+        // Check admins
+        if (Admin* admin = findAdminByUsername(username); admin != nullptr && admin->validatePassword(password)) {
+            currentUser = admin;
+            std::cout << "Admin login successful: " << username << std::endl;
+            return currentUser;
+        }
 
         // Login failed
         std::cout << "Login failed: Invalid username or password." << std::endl;
@@ -138,9 +134,24 @@ namespace EMotoRental
         return nullptr;
     }
 
+    Admin* AuthManager::findAdminByUsername(const std::string& username) const {
+        for (Admin* admin : admins) {
+            if (admin->getUsername() == username) {
+                return admin;
+            }
+        }
+        return nullptr;
+    }
+
     void AuthManager::addMember(Member* member) {
         if (member != nullptr) {
             members.push_back(member);
+        }
+    }
+
+    void AuthManager::addAdmin(Admin* admin) {
+        if (admin != nullptr) {
+            admins.push_back(admin);
         }
     }
 
@@ -148,88 +159,8 @@ namespace EMotoRental
         return members;
     }
 
-    // ========================================== DATA PERSISTENCE =====================================================
-
-    bool AuthManager::loadAllMembers() {
-        try {
-            // Check if file exists
-            if (!FileHandler::fileExists("data/members.csv")) {
-                std::cout << "Members file not found. Starting with empty member list." << std::endl;
-                return true; // Not an error, just an empty system
-            }
-
-            // Read file content
-            const std::string content = FileHandler::readFromFile("data/members.csv");
-            if (content.empty()) {
-                std::cout << "Members file is empty." << std::endl;
-                return true;
-            }
-
-            // Parse CSV content
-            std::istringstream iss(content);
-            std::string line;
-            int loadedCount = 0;
-
-            // Skip header line if present
-            if (std::getline(iss, line) && line.find("username") != std::string::npos) {
-                // Header detected --> Skip
-            } else {
-                // No header, process from this line
-                iss.clear();
-                iss.seekg(0);
-            }
-
-            while (std::getline(iss, line)) {
-                if (!line.empty()) {
-                    if (Member* member = Member::fromCSVString(line); member != nullptr) {
-                        addMember(member);
-                        loadedCount++;
-                    } else {
-                        std::cout << "Warning: Failed to parse member data: " << line << std::endl;
-                    }
-                }
-            }
-
-            std::cout << "Loaded " << loadedCount << " members from file." << std::endl;
-            return true;
-        } catch (const std::exception& e) {
-            std::cout << "Error loading members: " << e.what() << std::endl;
-            return false;
-        }
-    }
-
-    bool AuthManager::saveAllMembers() const {
-        try {
-            if (members.empty()) {
-                std::cout << "No members to save" << std::endl;
-                return true;
-            }
-
-            // Create CSV content
-            std::ostringstream oss;
-
-            // Add header
-            oss << "username,password,fullName,email,phoneNumber,idNumber,licenseNumber,hasValidLicense,isVerified,creditPoints,renterRating,ownedMotorbikeId\n";
-
-            // Add member data
-            for (const Member* member : members) {
-                oss << member->toCSVString() << "\n";
-            }
-
-            // Write to file
-            bool success = FileHandler::writeToFile(oss.str(), "data/members.csv");
-
-            if (success) {
-                std::cout << "Successfully saved " << members.size() << " members to file." << std::endl;
-            } else {
-                std::cout << "Failed to save members to file." << std::endl;
-            }
-
-            return success;
-        } catch (std::exception& e) {
-            std::cout << "Error saving members: " << e.what() << std::endl;
-            return false;
-        }
+    std::vector<Admin*> AuthManager::getAllAdmins() const {
+        return admins;
     }
 
     // ============================================== VALIDATION =======================================================
@@ -264,7 +195,15 @@ namespace EMotoRental
 
     // ========================================== PRIVATE HELPER METHODS ===============================================
 
-    // void AuthManager::addDefaultAdmin() {}
+    /**
+     * Creates a built-in admin account for system access, ensures there's always at least 1 admin available.
+     */
+    void AuthManager::addDefaultAdmin() {
+        const auto defaultAdmin = new Admin("admin", "12345", "System Admin");
+        addAdmin(defaultAdmin);
+
+        std::cout << "Default admin created successfully." << std::endl;
+    }
 
     bool AuthManager::userExists(const std::string& username) const {
         // Check in members
@@ -273,6 +212,9 @@ namespace EMotoRental
         }
 
         // Check in admins
+        if (findAdminByUsername(username) != nullptr) {
+            return true;
+        }
 
         return false;
     }
@@ -285,6 +227,10 @@ namespace EMotoRental
         members.clear();
 
         // Clean up admins
+        for (const Admin* admin : admins) {
+            delete admin;
+        }
+        admins.clear();
 
         // Clear current user reference (don't delete, as it's already deleted above
         currentUser = nullptr;

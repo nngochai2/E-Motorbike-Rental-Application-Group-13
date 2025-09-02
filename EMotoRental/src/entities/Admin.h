@@ -3,12 +3,10 @@
 //
 #pragma once
 #include "User.h"
-#include <iostream>
 
-namespace EMotoRental
-{
-    class Admin : public User
-    {
+namespace EMotoRental {
+    class Admin : public User {
+
     public:
         Admin();
         Admin(const std::string& username, const std::string& password,
@@ -18,9 +16,6 @@ namespace EMotoRental
         std::string getUserType() const override;
         void displayInfo() const override;
         std::string toCSVString() const override;
-
-        // Admin-specific functionality
-        void viewAllMembers() const;
-        void viewAllMotorbikes() const;
+        static Admin* fromCSVString(const std::string& csvData);
     };
 }
