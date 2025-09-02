@@ -5,6 +5,7 @@
 #pragma once
 #include <vector>
 #include "../entities/Member.h"
+#include "../entities/Admin.h"
 
 namespace EMotoRental
 {
@@ -12,6 +13,7 @@ namespace EMotoRental
     {
     private:
         std::vector<Member*> members;
+        std::vector<Admin*> admins;
         User* currentUser;
 
     public:
@@ -37,24 +39,18 @@ namespace EMotoRental
 
         // User management
         [[nodiscard]] Member* findMemberByUsername(const std::string& username) const;
-        // Admin* findAdminByUsername(const std::string& username) const;
+        Admin* findAdminByUsername(const std::string& username) const;
         void addMember(Member* member);
-        // void addAdmin(Admin* admin);
+        void addAdmin(Admin* admin);
         [[nodiscard]] std::vector<Member*> getAllMembers() const;
-        // std::vector<Admin*> getAllAdmins() const;
-
-        // Date persistence (using CSV methods)
-        bool loadAllMembers();
-        bool saveAllMembers() const;
-        // bool loadAllAdmins();
-        // bool saveAllAdmins();
+        std::vector<Admin*> getAllAdmins() const;
 
         // Validation
         static bool validatePasswordStrength(const std::string& password) ;
 
     private:
         // Helper methods
-        // void addDefaultAdmin();
+        void addDefaultAdmin();
         [[nodiscard]] bool userExists(const std::string& username) const;
         void cleanupMemory();
     };
