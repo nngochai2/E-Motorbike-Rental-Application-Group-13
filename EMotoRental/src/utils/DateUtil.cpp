@@ -39,6 +39,19 @@ namespace EMotoRental {
 		return std::chrono::system_clock::now();
 	}
 
+	int DateUtil::getCurrentYear() {
+		const TimePoint currentTime = getCurrentTime();
+		const std::tm currentTm = timePointToTm(currentTime);
+		return currentTm.tm_year + 1900;
+	}
+
+	bool DateUtil::isValidYear(int year, int minYear, int maxYearOffset) {
+		const int currentYear = getCurrentYear();
+		const int maxYear = currentYear + maxYearOffset;
+
+		return year >= minYear && year <= maxYear;
+	}
+
 	int DateUtil::daysBetween(const TimePoint& start, const TimePoint& end) {
 		auto duration = end - start;
 		auto hours = std::chrono::duration_cast<std::chrono::hours>(duration).count();
