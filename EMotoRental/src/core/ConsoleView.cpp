@@ -142,7 +142,6 @@ namespace EMotoRental
         std::cout << "7. Search Available Motorbikes\n";
         std::cout << "8. View Rental History\n";
         std::cout << "0. Logout\n";
-        std::cout << "\nEnter your choice: ";
     }
 
     // ============================================== ADMIN SCREENS ====================================================
@@ -154,7 +153,6 @@ namespace EMotoRental
         std::cout << "4. System Statistics\n";
         std::cout << "5. Data Management\n";
         std::cout << "0. Logout\n";
-        std::cout << "\nEnter your choice: ";
     }
 
     void ConsoleView::displayAllMembers(const std::vector<Member*>& members) {
@@ -196,7 +194,6 @@ namespace EMotoRental
         std::cout << "2. Filter by Location\n";
         std::cout << "3. Register as Member\n";
         std::cout << "0. Exit\n";
-        std::cout << "\nEnter your choice: ";
     }
 
     // ======================================== CREDIT MANAGEMENT SCREENS ==============================================

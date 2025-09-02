@@ -147,17 +147,16 @@ namespace EMotoRental
 
         #ifdef _WIN32
             // Windows implementation using conio.h
-            #include <conio.h>
             char ch;
-            while ((ch = _getch()) != '\r' && ch != '\n') {  // ✅ Fixed condition
-                if (ch == '\b' || ch == 127) { // Backspace
+            while ((ch = _getch()) != 13) { // 13 is the ASCII code for Enter
+                if (ch == 8) { // 8 is the ASCII code for Backspace
                     if (!password.empty()) {
                         password.pop_back();
                         std::cout << "\b \b"; // Move back, print space, move back
                         std::cout.flush();
                     }
-                } else if (ch >= 32 && ch <= 126) {  // Printable characters
-                    password += ch;
+                } else {  // Printable characters
+                    password.push_back(ch);
                     std::cout << "*";
                     std::cout.flush();
                 }
@@ -165,14 +164,33 @@ namespace EMotoRental
             std::cout << std::endl;
 
         #else
-            // Linux/Mac implementation - simplified version
-            std::cout << "(Password will be visible): ";
-            std::getline(std::cin, password);
+            // Linux/Mac implementation using termios.h
+            struct termios oldTermios, newTermios;
+            tcgetattr(STDIN_FILENO, &oldTermios);
 
+            newTermios = oldTermios;
+            newTermios.c_lflag &= ~(ECHO | ICANON);
+            tcsetattr(STDIN_FILENO, TCSANOW, &newTermios);
+
+            char ch;
+            while ((ch = getchar()) != '\n' && ch != '\r') {
+                if (ch == 127 || ch == '\b') {  // Backspace
+                    if (!password.empty()) {
+                        password.pop_back();
+                        std::cout << "\b \b";
+                        std::cout.flush();
+                    }
+                } else if (ch >= 32 && ch <= 126) {  // Printable characters
+                    password += ch;
+                    std::cout << '*';
+                    std::cout.flush();
+                }
+            }
+
+            tcsetattr(STDIN_FILENO, TCSAFLUSH, &oldTermios);
+            std::cout << std::endl;
         #endif
 
         return password;
     }
-
-
 }
