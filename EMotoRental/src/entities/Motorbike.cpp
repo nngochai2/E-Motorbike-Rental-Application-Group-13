@@ -11,25 +11,54 @@
 
 namespace EMotoRental
 {
-    Motorbike::Motorbike() : engineSize(0), yearMade(2025), dailyRate(0.0), 
-                            requiredRenterRating(0.0), motorbikeRating(3.0), 
-                            isListed(false)
+    Motorbike::Motorbike() : engineSize(0), yearMade(2025), dailyRate(0.0),
+                            requiredRenterRating(1.0), isListed(false),
+                            motorbikeRating(3.0)
     {
-        // Generate a UUID for the motorbike with a prefix
-        motorbikeId = IdGenerator::generateId("MB");
+        // Private default constructor - only used by fromCSVString() for data loading
+        // Real motorbikes should always be created with the parameterized constructor
     }
 
-    Motorbike::Motorbike(const std::string& brand, const std::string& model, const std::string& color, 
-                        int engineSize, const std::string& plate, const std::string& city, 
-                        const std::string& owner) 
-        : brand(brand), model(model), color(color), engineSize(engineSize),
-          yearMade(2025), licensePlate(plate), city(city), dailyRate(0.0),
-          requiredRenterRating(0.0), motorbikeRating(3.0), isListed(false),
-          ownerUsername(owner)
+    Motorbike::Motorbike(const std::string& brand, const std::string& model,
+                        const std::string& color, int engineSize, int yearMade,
+                        const std::string& plate, const std::string& city,
+                        const std::string& owner)
+        : licensePlate(plate), brand(brand), model(model), color(color),
+          engineSize(engineSize), yearMade(yearMade), city(city), dailyRate(0.0),
+          requiredRenterRating(1.0), isListed(false), ownerUsername(owner),
+          motorbikeRating(3.0)
     {
-        // Generate a UUID for the motorbike with a prefix
-        motorbikeId = IdGenerator::generateId("MB");
+        // Input validation following requirements
+        if (brand.empty() || model.empty() || color.empty()) {
+            throw std::invalid_argument("Brand, model, and color cannot be empty");
+        }
+
+        if (city.empty()) {
+            throw std::invalid_argument("City cannot be empty");
+        }
+
+        // Validate city is HCMC or Hanoi (project requirement)
+        if (city != "HCMC" && city != "Hanoi") {
+            throw std::invalid_argument("City must be either 'HCMC' or 'Hanoi'");
+        }
+
+        if (owner.empty()) {
+            throw std::invalid_argument("Owner username cannot be empty");
+        }
+
+        if (engineSize <= 0) {
+            throw std::invalid_argument("Engine size must be greater than 0");
+        }
+
+        // Validate year made
+        if (!DateUtil::isValidYear(yearMade, 1900, 0)) {
+            const int currentYear = DateUtil::getCurrentYear();
+            throw std::invalid_argument("Invalid made year! Year made must be between 1900 and "
+                                        + std::to_string(currentYear));
+        }
     }
+
+    // ============================================ CORE FUNCTIONALITY =================================================
 
     bool Motorbike::listForRent(const DateUtil::TimePoint& startDate, const DateUtil::TimePoint& endDate, 
                               double dailyRate, double minRating)
@@ -124,11 +153,6 @@ namespace EMotoRental
         return dailyRate * days;
     }
 
-    std::string Motorbike::getMotorbikeId() const
-    {
-        return motorbikeId;
-    }
-
     std::string Motorbike::getOwnerUsername() const
     {
         return ownerUsername;
@@ -137,7 +161,6 @@ namespace EMotoRental
     void Motorbike::displayDetails() const
     {
         std::cout << "========== MOTORBIKE DETAILS ==========" << std::endl;
-        std::cout << "ID: " << motorbikeId << std::endl;
         std::cout << "Brand: " << brand << std::endl;
         std::cout << "Model: " << model << std::endl;
         std::cout << "Color: " << color << std::endl;
@@ -181,8 +204,7 @@ namespace EMotoRental
     std::string Motorbike::toCSVString() const
     {
         std::ostringstream oss;
-        oss << motorbikeId << ","
-            << brand << ","
+        oss << brand << ","
             << model << ","
             << color << ","
             << engineSize << ","
@@ -211,22 +233,21 @@ namespace EMotoRental
         
         try {
             auto* bike = new Motorbike();
-            
-            bike->motorbikeId = tokens[0];
-            bike->brand = tokens[1];
-            bike->model = tokens[2];
-            bike->color = tokens[3];
-            bike->engineSize = std::stoi(tokens[4]);
-            bike->yearMade = std::stoi(tokens[5]);
-            bike->licensePlate = tokens[6];
-            bike->city = tokens[7];
-            bike->dailyRate = std::stod(tokens[8]);
-            bike->requiredRenterRating = std::stod(tokens[9]);
-            bike->motorbikeRating = std::stod(tokens[10]);
-            bike->isListed = (tokens[11] == "1");
-            bike->ownerUsername = tokens[12];
-            bike->availableStart = DateUtil::parseDate(tokens[13]);
-            bike->availableEnd = DateUtil::parseDate(tokens[14]);
+
+            bike->licensePlate = tokens[0];                                     // 0 - License plate as primary identifier
+            bike->brand = tokens[1];                                            // 1
+            bike->model = tokens[2];                                            // 2
+            bike->color = tokens[3];                                            // 3
+            bike->engineSize = std::stoi(tokens[4]);                           // 4
+            bike->yearMade = std::stoi(tokens[5]);                             // 5
+            bike->city = tokens[6];                                             // 6
+            bike->dailyRate = std::stod(tokens[7]);                            // 7
+            bike->requiredRenterRating = std::stod(tokens[8]);                 // 8
+            bike->motorbikeRating = std::stod(tokens[9]);                      // 9
+            bike->isListed = tokens[10] == "1";                              // 10
+            bike->ownerUsername = tokens[11];                                   // 11
+            bike->availableStart = DateUtil::parseDate(tokens[12]);            // 12
+            bike->availableEnd = DateUtil::parseDate(tokens[13]);              // 13
             
             return bike;
         } catch (const std::exception& e) {
