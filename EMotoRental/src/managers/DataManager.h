@@ -35,7 +35,7 @@ namespace EMotoRental
 
         // Data lifecycle
         static bool initializeSystem();
-        bool loadAllData() const;
+        bool loadAllData();
         bool saveAllData();
         void shutdown();
 
@@ -59,11 +59,13 @@ namespace EMotoRental
         static bool createDirectoryStructure();
         static std::vector<std::string> listMembers();
         static std::vector<std::string> listAdmins();
+        static std::vector<std::string> listMotorbikes();
 
     private:
         // Helper methods
         static std::string getMemberFilePath(const std::string& username);
         static std::string getAdminFilePath(const std::string& username);
+        static std::string getMotorbikeFilePath(const std::string& licensePlate);
         static bool fileExists(const std::string& filename);
         static void logDataOperation(const std::string& operation, const std::string& details);
     };
