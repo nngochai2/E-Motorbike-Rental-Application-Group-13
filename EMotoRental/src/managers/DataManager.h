@@ -4,6 +4,7 @@
 
 #pragma once
 #include "AuthManager.h"
+#include "MotorbikeManager.h"
 #include <string>
 #include <vector>
 
@@ -13,7 +14,7 @@ namespace EMotoRental
     {
     private:
         AuthManager* authManager;
-        // MotorbikeManager* motorbikeManager;  // TODO: Add when implemented
+        MotorbikeManager* motorbikeManager;
         // RentalManager* rentalManager; // TODO: Add when implemented
 
         // File paths
@@ -29,7 +30,7 @@ namespace EMotoRental
 
         // Manager access
         AuthManager* getAuthManager() const;
-        // MotorbikeManager* getMotorbikeManager() const;  // TODO
+        MotorbikeManager* getMotorbikeManager() const;
         // RentalManager* getRentalManager() const; // TODO
 
         // Data lifecycle
@@ -46,6 +47,9 @@ namespace EMotoRental
 
         static bool saveAdmin(const Admin* admin);
         static bool loadAdmin(const std::string& username, Admin*& admin);
+
+        static bool saveMotorbike(const Motorbike* motorbike);
+        static bool loadMotorbike(const std::string& licensePlate, Motorbike*& motorbike);
 
         // Data integrity
         static bool validateDataConsistency();

@@ -21,9 +21,11 @@ namespace EMotoRental
 
     DataManager::DataManager() {
         authManager = nullptr;
+        motorbikeManager = nullptr;
 
         if (initializeSystem()) {
             authManager = new AuthManager();
+            motorbikeManager = new MotorbikeManager();
             std::cout << "DataManager: System initialized successfully." << std::endl;
         } else {
             std::cerr << "DataManager: Failed to initialize system." << std::endl;
@@ -38,6 +40,10 @@ namespace EMotoRental
 
     AuthManager* DataManager::getAuthManager() const {
         return authManager;
+    }
+
+    MotorbikeManager* DataManager::getMotorbikeManager() const {
+        return motorbikeManager;
     }
 
     // ============================================= DATA LIFECYCLE ====================================================
@@ -136,6 +142,14 @@ namespace EMotoRental
             } else {
                 std::cout << "DataManager: Warning - Failed to save admin: " << admin->getUsername() << std::endl;
                 success = false;
+            }
+        }
+
+        // Save all motorbikes
+        if (motorbikeManager) {
+            const auto motorbikes = motorbikeManager->getAllMotorbikes();
+            for (const auto& motorbike : motorbikes) {
+
             }
         }
 
@@ -288,6 +302,15 @@ namespace EMotoRental
             return false;
         }
     }
+
+    bool DataManager::saveMotorbike(const Motorbike* motorbike) {
+        if (!motorbike) return false;
+
+        try {
+            const std::string filePath =
+        }
+    }
+
 
     // ============================================ DATA INTEGRITY =====================================================
 
