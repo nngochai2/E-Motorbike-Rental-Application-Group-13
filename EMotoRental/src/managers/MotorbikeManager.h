@@ -32,7 +32,7 @@ namespace EMotoRental
               yearMade(yearMade), licensePlate(plate), city(city), ownerUsername(owner) {}
     };
 
-    // Structure to hold listing dat
+    // Structure to hold listing data
     struct MotorbikeListingData
     {
         DateUtil::TimePoint startDate;
