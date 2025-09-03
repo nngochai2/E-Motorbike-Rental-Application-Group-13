@@ -50,22 +50,14 @@ namespace EMotoRental
     private:
         std::vector<Motorbike*> motorbikes;
 
-        // File paths for data persistence
-        static const std::string MOTORBIKES_FILE;
-
-        // Helper methods for data management
-        std::string formatMotorbikesAsCSV() const;
-        std::vector<Motorbike*> parseMotorbikesFromCSV(const std::string& content) const;
-        void cleanupMemory();
-
     public:
         MotorbikeManager();
         ~MotorbikeManager();
 
         // Core motorbike management
         bool registerMotorbike(const MotorbikeRegistrationData& data);
-        bool listMotorbike(const std::string& motorbikeId, const MotorbikeListingData& listingData);
-        bool unlistMotorbike(const std::string& motorbikeId);
+        bool listMotorbike(const std::string& licensePlate, const MotorbikeListingData& listingData) const;
+        bool unlistMotorbike(const std::string& licensePlate) const;
 
         // Search and retrieval
         std::vector<Motorbike*> searchMotorbikes(const std::string& city,
@@ -75,8 +67,8 @@ namespace EMotoRental
         std::vector<Motorbike*> getAllMotorbikes() const;
 
         // Individual motorbike retrieval
-        Motorbike* getMotorbikeByLicensePlate(const std::string& plate) const;
-        Motorbike* getMotorbikeByOwner(const std::string& ownerUsername) const;
+        Motorbike* findMotorbikeByLicensePlate(const std::string& plate) const;
+        Motorbike* findMotorbikeByOwner(const std::string& ownerUsername) const;
 
         // Rating management (called by RentalManager)
         void updateMotorbikeRating(const std::string& motorbikeId, double newRating);
@@ -97,5 +89,8 @@ namespace EMotoRental
         // Display methods (for admin and debugging)
         void displayAllMotorbikes() const;
         void displayMotorbikeStatistics() const;
+
+    private:
+        void cleanupMemory();
     };
 }
