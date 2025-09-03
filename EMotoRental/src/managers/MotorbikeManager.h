@@ -62,6 +62,40 @@ namespace EMotoRental
         MotorbikeManager();
         ~MotorbikeManager();
 
-        
+        // Core motorbike management
+        bool registerMotorbike(const MotorbikeRegistrationData& data);
+        bool listMotorbike(const std::string& motorbikeId, const MotorbikeListingData& listingData);
+        bool unlistMotorbike(const std::string& motorbikeId);
+
+        // Search and retrieval
+        std::vector<Motorbike*> searchMotorbikes(const std::string& city,
+                                               const DateUtil::TimePoint& startDate,
+                                               const DateUtil::TimePoint& endDate) const;
+        std::vector<Motorbike*> getAllListedMotorbikes() const;
+        std::vector<Motorbike*> getAllMotorbikes() const;
+
+        // Individual motorbike retrieval
+        Motorbike* getMotorbikeByLicensePlate(const std::string& plate) const;
+        Motorbike* getMotorbikeByOwner(const std::string& ownerUsername) const;
+
+        // Rating management (called by RentalManager)
+        void updateMotorbikeRating(const std::string& motorbikeId, double newRating);
+
+        // Validation methods
+        bool isLicensePlateUnique(const std::string& licensePlate) const;
+        bool canOwnerRegisterMotorbike(const std::string& ownerUsername) const;
+
+        // Data persistence
+        bool loadAllMotorbikes();
+        bool saveAllMotorbikes() const;
+
+        // Statistics and utilities
+        int getTotalMotorbikeCount() const;
+        int getListedMotorbikeCount() const;
+        std::vector<std::string> getAllCities() const;
+
+        // Display methods (for admin and debugging)
+        void displayAllMotorbikes() const;
+        void displayMotorbikeStatistics() const;
     };
 }
