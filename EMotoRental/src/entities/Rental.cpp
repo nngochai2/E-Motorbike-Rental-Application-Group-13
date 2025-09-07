@@ -10,12 +10,29 @@
 
 namespace EMotoRental
 {
+
+    Rental::Rental() 
+        : rentalId(IdGenerator::generateId("RNT")),
+          renterUsername(""),
+          ownerUsername(""),
+          motorbikeId(""),
+          startDate(DateUtil::TimePoint{}),
+          endDate(DateUtil::TimePoint{}),
+          totalCost(0.0),
+          status(RentalStatus::ACTIVE),
+          renterRatingId(""),
+          motorbikeRatingId("")
+    {}
+
     Rental::Rental(const std::string& requestId, const std::string& renterUsername, 
                  const std::string& motorbikeId, const DateUtil::TimePoint& startDate,
                  const DateUtil::TimePoint& endDate, double totalCost)
         : renterUsername(renterUsername), motorbikeId(motorbikeId),
-          startDate(startDate), endDate(endDate), totalCost(totalCost),
-          status(RentalStatus::ACTIVE)
+        startDate(startDate), endDate(endDate), totalCost(totalCost),
+        status(RentalStatus::ACTIVE),
+        ownerUsername(""),
+        renterRatingId(""),
+        motorbikeRatingId("")
     {
         // Generate a UUID for the rental with a prefix, different from requestId
         rentalId = IdGenerator::generateId("RNT");
@@ -31,22 +48,52 @@ namespace EMotoRental
         return status;
     }
     
+    void Rental::approve()
+    {
+        status = RentalStatus::ACTIVE;
+        std::cout << "Rental " << rentalId << " has been approved." << std::endl;
+    }
+
     void Rental::complete()
     {
         status = RentalStatus::COMPLETED;
         std::cout << "Rental " << rentalId << " has been marked as completed." << std::endl;
     }
     
-    void Rental::displayDetails() const
+    bool Rental::isActive() const
+    {
+        return status == RentalStatus::ACTIVE;
+    }
+
+    double Rental::calculateCost() const
+    {
+        //WIP, CALCULATION GOES HERE IN THE FUTURE
+        return totalCost;
+    }
+    
+    void Rental::addRenterRating(const std::string& ratingId)
+    {
+        renterRatingId = ratingId;
+    }
+
+    void Rental::addMotorbikeRating(const std::string& ratingId)
+    {
+        motorbikeRatingId = ratingId;
+    }
+
+    void Rental::displayInfo() const
     {
         std::cout << "========== RENTAL DETAILS ==========" << std::endl;
         std::cout << "Rental ID: " << rentalId << std::endl;
         std::cout << "Renter: " << renterUsername << std::endl;
+        std::cout << "Owner: " << ownerUsername << std::endl;
         std::cout << "Motorbike ID: " << motorbikeId << std::endl;
         std::cout << "Start Date: " << DateUtil::formatDate(startDate) << std::endl;
         std::cout << "End Date: " << DateUtil::formatDate(endDate) << std::endl;
         std::cout << "Total Cost: " << totalCost << " CP" << std::endl;
         std::cout << "Status: " << (status == RentalStatus::ACTIVE ? "ACTIVE" : "COMPLETED") << std::endl;
+        std::cout << "Renter Rating ID: " << renterRatingId << std::endl;
+        std::cout << "Motorbike Rating ID: " << motorbikeRatingId << std::endl;
         std::cout << "===================================" << std::endl;
     }
     
@@ -59,7 +106,10 @@ namespace EMotoRental
             << DateUtil::formatDate(startDate) << ","
             << DateUtil::formatDate(endDate) << ","
             << totalCost << ","
-            << (status == RentalStatus::ACTIVE ? "ACTIVE" : "COMPLETED");
+            << (status == RentalStatus::ACTIVE ? "ACTIVE" : "COMPLETED") << ","
+            << ownerUsername << "," 
+            << renterRatingId << "," 
+            << motorbikeRatingId;
             
         return oss.str();
     }
@@ -88,6 +138,12 @@ namespace EMotoRental
                 rental->status = RentalStatus::COMPLETED;
             }
             
+            if (tokens.size() >= 10) {
+                rental->ownerUsername = tokens[7];
+                rental->renterRatingId = tokens[8];
+                rental->motorbikeRatingId = tokens[9];
+            }
+
             return rental;
         } catch (const std::exception& e) {
             std::cerr << "Error parsing rental data: " << e.what() << std::endl;
