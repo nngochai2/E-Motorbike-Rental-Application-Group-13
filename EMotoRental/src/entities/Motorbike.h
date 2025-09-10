@@ -46,6 +46,9 @@ namespace EMotoRental
 
         std::string getMotorbikeId() const;
         std::string getOwnerUsername() const;
+        std::string getLicensePlate() const;
+        std::string getCity() const;
+        bool getIsListed() const;
         void displayDetails() const;
         void displayPublicInfo() const;
         std::string toCSVString() const;
