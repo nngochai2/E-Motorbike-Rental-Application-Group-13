@@ -45,7 +45,7 @@ namespace EMotoRental
         virtual ~Motorbike() = default;
 
         // Core functionalities
-        bool listForRent(const DateUtil::TimePoint& startDate, const DateUtil::TimePoint& endDate, 
+        bool listForRent(const DateUtil::TimePoint& startDate, const DateUtil::TimePoint& endDate,
                         double dailyRate, double minRating);
         bool unlist();
         bool isAvailable(const DateUtil::TimePoint& startDate, const DateUtil::TimePoint& endDate) const;

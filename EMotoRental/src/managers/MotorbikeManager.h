@@ -1,5 +1,5 @@
 //
-// Created by Nguyen Ngoc Hai on 9/3/2025.
+// Created by Hoang Vinh Khue on 9/07/2025.
 //
 
 #pragma once
@@ -54,30 +54,41 @@ namespace EMotoRental
         MotorbikeManager();
         ~MotorbikeManager();
 
-        // Core motorbike management
-        bool registerMotorbike(const MotorbikeRegistrationData& data);
-        bool listMotorbike(const std::string& licensePlate, const MotorbikeListingData& listingData) const;
-        bool unlistMotorbike(const std::string& licensePlate) const;
+        // Registration and listing management
+        bool registerMotorbike(
+            const std::string& ownerUsername,
+            const std::string& brand,
+            const std::string& model,
+            const std::string& color,
+            int engineSize,
+            const std::string& licensePlate,
+            const std::string& city
+        );
 
-        // Search and retrieval
-        std::vector<Motorbike*> searchMotorbikes(const std::string& city,
-                                               const DateUtil::TimePoint& startDate,
-                                               const DateUtil::TimePoint& endDate) const;
-        std::vector<Motorbike*> getAllListedMotorbikes() const;
+        bool listMotorbike(
+            const std::string& motorbikeId,
+            const DateUtil::TimePoint& startDate,
+            const DateUtil::TimePoint& endDate,
+            double dailyRate,
+            double minRating
+        );
+
+        bool unlistMotorbike(const std::string& motorbikeId);
+
+        // Search and retrieval methods
+        std::vector<Motorbike*> searchMotorbikes(
+            const std::string& city,
+            const DateUtil::TimePoint& startDate,
+            const DateUtil::TimePoint& endDate
+        ) const;
+        Motorbike* getMotorbikeById(const std::string& motorbikeId) const;
+        std::vector<Motorbike*> getMotorbikesByOwner(const std::string& username) const;
         std::vector<Motorbike*> getAllMotorbikes() const;
 
-        // Individual motorbike retrieval
-        Motorbike* findMotorbikeByLicensePlate(const std::string& plate) const;
-        Motorbike* findMotorbikeByOwner(const std::string& ownerUsername) const;
+        // Rating system
+        bool updateMotorbikeRating(const std::string& motorbikeId, double rating);
 
-        // Rating management (called by RentalManager)
-        void updateMotorbikeRating(const std::string& motorbikeId, double newRating);
-
-        // Validation methods
-        bool isLicensePlateUnique(const std::string& licensePlate) const;
-        bool canOwnerRegisterMotorbike(const std::string& ownerUsername) const;
-
-        // Data persistence
+        // Data persistence methods
         bool loadAllMotorbikes();
         bool saveAllMotorbikes() const;
 

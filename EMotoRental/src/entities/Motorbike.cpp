@@ -157,6 +157,21 @@ namespace EMotoRental
     {
         return ownerUsername;
     }
+    
+    std::string Motorbike::getLicensePlate() const
+    {
+        return licensePlate;
+    }
+    
+    std::string Motorbike::getCity() const
+    {
+        return city;
+    }
+    
+    bool Motorbike::getIsListed() const
+    {
+        return isListed;
+    }
 
     void Motorbike::displayDetails() const
     {
