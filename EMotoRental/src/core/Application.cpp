@@ -48,7 +48,7 @@ namespace EMotoRental
             return;
         }
 
-        view->displayWelcomeScreen();
+        ConsoleView::displayWelcomeScreen();
 
         while (isRunning) {
             try {
@@ -67,7 +67,7 @@ namespace EMotoRental
     // ========================================== MAIN FLOW CONTROLLER =================================================
 
     void Application::handleUserTypeSelection() {
-        switch (view->getUserTypeChoice()) {
+        switch (ConsoleView::getUserTypeChoice()) {
         case 1:
             handleGuestFlow();
             break;
@@ -94,9 +94,9 @@ namespace EMotoRental
     void Application::handleMemberFlow() {
         if (handleMemberLogin()) {
             // Member successfully logged in
-            const auto member = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+            const auto member = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
             InputHelper::displaySuccess("Welcome back, " + member->getFullName() + "!");
-            view->displayMemberDashboard(member);
+            ConsoleView::displayMemberDashboard(member);
             handleMemberMenu();
         }
         // If login failed, return to main menu
@@ -105,7 +105,7 @@ namespace EMotoRental
     void Application::handleAdminFlow() {
         if (handleAdminLogin()) {
             // Admin successfully logged in
-            const auto admin = static_cast<Admin*>(dataManager->getAuthManager()->getCurrentUser());
+            const auto admin = dynamic_cast<Admin*>(dataManager->getAuthManager()->getCurrentUser());
             InputHelper::displaySuccess("Admin access granted. Welcome, " + admin->getFullName() + "!");
             handleAdminMenu();
         }
@@ -114,14 +114,15 @@ namespace EMotoRental
     // ========================================== AUTHENTICATION FLOWS =================================================
 
     bool Application::handleMemberLogin() const {
-        const std::string username = view->getUsername();
-        const std::string password = view->getPassword();
+        const std::string username = ConsoleView::getUsername();
+        const std::string password = ConsoleView::getPassword();
 
         const User* user = dataManager->getAuthManager()->login(username, password);
 
         if (user && user->getUserType() == "Member") {
             return true;
         }
+
         if (user && user->getUserType() != "Member") {
             InputHelper::displayError("Please use the correct login option for your account type.");
             dataManager->getAuthManager()->logout();
@@ -132,8 +133,8 @@ namespace EMotoRental
     }
 
     bool Application::handleAdminLogin() const {
-        const std::string username = view->getUsername();
-        const std::string password = view->getPassword();
+        const std::string username = ConsoleView::getUsername();
+        const std::string password = ConsoleView::getPassword();
 
         const User* user = dataManager->getAuthManager()->login(username, password);
 
@@ -152,11 +153,11 @@ namespace EMotoRental
     void Application::handleMemberRegistration() const {
         std::string username, password, fullName, email, phone;
 
-        if (view->getRegistrationData(username, password, fullName, email, phone)) {
+        if (ConsoleView::getRegistrationData(username, password, fullName, email, phone)) {
             if (AuthManager* authManager = dataManager->getAuthManager(); authManager->registerMember(username, password, fullName, email, phone)) {
                 // Efficiently save the new member to an individual file
                 if (const Member* newMember = authManager->findMemberByUsername(username)) {
-                    dataManager->saveMember(newMember);
+                    DataManager::saveMember(newMember);
                 }
 
                 InputHelper::displaySuccess("Registration successful! You can now login with your credentials.");
@@ -175,11 +176,11 @@ namespace EMotoRental
 
     // ============================================= MENU HANDLERS =====================================================
 
-    void Application::handleGuestMenu() {
+    void Application::handleGuestMenu() const {
         bool guestSession = true;
 
         while (guestSession) {
-            view->displayMainMenu("Guest");
+            ConsoleView::displayMainMenu("Guest");
 
             switch (InputHelper::getMenuChoice(0, 3)) {
             case 1:
@@ -209,7 +210,7 @@ namespace EMotoRental
         bool memberSession = true;
 
         while (memberSession) {
-            view->displayMainMenu("Member");
+            ConsoleView::displayMainMenu("Member");
 
             switch (InputHelper::getMenuChoice(0, 8)) {
             case 1:
@@ -251,7 +252,7 @@ namespace EMotoRental
         bool adminSession = true;
 
         while (adminSession) {
-            view->displayMainMenu("Admin");
+            ConsoleView::displayMainMenu("Admin");
 
             switch (InputHelper::getMenuChoice(0, 5)) {
             case 1:
@@ -283,22 +284,22 @@ namespace EMotoRental
     // ========================================= MEMBER FEATURE HANDLERS ===============================================
 
     void Application::handleMemberDashboard() const {
-        if (const auto member = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser())) {
-            view->displayMemberDashboard(member);
+        if (const auto member = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser())) {
+            ConsoleView::displayMemberDashboard(member);
             InputHelper::waitForEnter();
         }
     }
 
     void Application::handleProfileUpdate() {
-        const auto member = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        const auto member = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
         if (!member) return;
 
         std::string email, phone;
 
-        if (view->getProfileUpdateData(email, phone)) {
+        if (ConsoleView::getProfileUpdateData(email, phone)) {
             if (member->updateProfile(email, phone)) {
                 // Update only this member's file
-                dataManager->updateMember(member);
+                DataManager::updateMember(member);
                 InputHelper::displaySuccess("Profile updated successfully!");
             } else {
                 InputHelper::displayError("Profile update failed! Please check your input format.");
@@ -309,18 +310,18 @@ namespace EMotoRental
     }
 
     void Application::handlePasswordChange() {
-        const auto member = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        const auto member = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
         if (!member) return;
 
         std::string oldPass, newPass;
 
-        if (view->getPasswordChangeData(oldPass, newPass)) {
+        if (ConsoleView::getPasswordChangeData(oldPass, newPass)) {
             // Validate new password using AuthManager
-            if (!dataManager->getAuthManager()->validatePasswordStrength(newPass)) {
+            if (!AuthManager::validatePasswordStrength(newPass)) {
                 InputHelper::displayError("New password does not meet strength requirements!");
             } else if (member->changePassword(oldPass, newPass)) {
                 // Update this member's file only
-                dataManager->updateMember(member);
+                DataManager::updateMember(member);
                 InputHelper::displaySuccess("Password updated successfully!");
             } else {
                 InputHelper::displayError("Password update failed! Please check your current password.");
@@ -331,7 +332,7 @@ namespace EMotoRental
     }
 
     void Application::handleCreditTopUp() {
-        const auto member = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        const auto member = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
         if (!member) return;
 
         InputHelper::displayMessage("Current Credit Points: " + std::to_string(member->getCreditPoints()));
@@ -339,10 +340,10 @@ namespace EMotoRental
         double amount;
         std::string password;
 
-        if (view->getCreditTopUpData(amount, password)) {
+        if (ConsoleView::getCreditTopUpData(amount, password)) {
             if (member->topUpCredits(amount, password)) {
                 // Update only this member's file
-                dataManager->updateMember(member);
+                DataManager::updateMember(member);
                 InputHelper::displaySuccess("Successfully topped up " + std::to_string(amount) + " credit points!");
                 InputHelper::displayMessage("New balance: " + std::to_string(member->getCreditPoints()) + " CP");
             } else {
@@ -354,9 +355,74 @@ namespace EMotoRental
     }
 
     void Application::handleMotorbikeRegistration() {
-        InputHelper::displayMessage("Motorbike Registration feature coming soon!");
-        InputHelper::displayMessage("This will allow members to register one electric motorbike.");
-        InputHelper::displayMessage("Required info: brand, model, color, engine size, plate number, location");
+        if (!isUserLoggedIn() || isMember()) {
+            InputHelper::displayError("Please log in as a member to register a motorbike.");
+            return;
+        }
+
+        const auto currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+
+        // Check if member already owns a motorbike
+        if (!dataManager->getMotorbikeManager()->canOwnerRegisterMotorbike(currentMember->getUsername())) {
+            InputHelper::displayError("You already own a motorbike. Each member can only register one motorbike.");
+            InputHelper::waitForEnter();
+            return;
+        }
+
+        ConsoleView::displayHeader("Motorbike Registration");
+
+        try {
+            // Get motorbike details from user
+            std::string brand = InputHelper::getStringInput("Enter brand: ");
+            std::string model = InputHelper::getStringInput("Enter model: ");
+            std::string color = InputHelper::getStringInput("Enter color: ");
+
+            int engineSize =InputHelper::getIntInput("Enter engine size (cc): ");
+            // Engine size validation
+            if (engineSize <= 0) {
+                InputHelper::displayError("Engine size must be greater than 0.");
+                InputHelper::waitForEnter();
+                return;
+            }
+
+            int yearMade = InputHelper::getIntInput("Enter year made: ");
+
+            std::string licensePlate = InputHelper::getStringInput("Enter license plate: ");
+
+            // City validation (project requirement: HCMC or Hanoi only)
+            std::string city;
+            while (true) {
+                city = InputHelper::getStringInput("Enter city (HCMC/Hanoi): ");
+                if (city == "HCMC" || city == "Hanoi") {
+                    break;
+                }
+                InputHelper::displayError("City must be either 'HCMC' or 'Hanoi'.");
+            }
+
+            // Create registration data
+            MotorbikeRegistrationData regData(brand, model, color, engineSize, yearMade, licensePlate, city,
+                                        currentMember->getUsername());
+
+            // Register and save through DataManager
+            if (dataManager->registerAndSaveMotorbike(regData)) {
+                InputHelper::displaySuccess("Motorbike registered successfully");
+
+                // Update member's owned motorbike license plate
+                currentMember->setOwnedMotorbikeId(licensePlate);
+                dataManager->updateMember(currentMember);
+
+                // Display registered motorbike details
+                if (const Motorbike* newBike = dataManager->getMotorbikeManager()->getMotorbikeByLicensePlate(licensePlate)) {
+                    newBike->displayDetails();
+                }
+            } else {
+                InputHelper::displayError("Failed to register motorbike. Please try again.");
+            }
+
+        } catch (const std::exception& e) {
+            InputHelper::displayError("Failed to register motorbike. Please try again.");
+        }
+
         InputHelper::waitForEnter();
     }
 
@@ -374,12 +440,12 @@ namespace EMotoRental
         InputHelper::waitForEnter();
     }
 
-    void Application::handleRentalHistory() {
-        if (const auto member = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser())) {
+    void Application::handleRentalHistory() const {
+        if (const auto member = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser())) {
             if (const auto history = member->getRentalHistory(); history.empty()) {
                 InputHelper::displayMessage("You have no rental history yet.");
             } else {
-                view->displayHeader("Rental History");
+                ConsoleView::displayHeader("Rental History");
                 std::cout << "You have " << history.size() << " rental records:" << std::endl;
                 for (size_t i = 0; i < history.size(); ++i) {
                     std::cout << (i + 1) << ". Rental ID: " << history[i] << std::endl;
@@ -394,7 +460,7 @@ namespace EMotoRental
 
     void Application::handleViewAllMembers() const {
         const auto members = dataManager->getAuthManager()->getAllMembers();
-        view->displayAllMembers(members);
+        ConsoleView::displayAllMembers(members);
 
         InputHelper::displayMessage("Total registered members: " + std::to_string(members.size()));
         InputHelper::waitForEnter();
@@ -411,7 +477,7 @@ namespace EMotoRental
         const std::string username = InputHelper::getStringInput("Enter member username: ");
 
         if (const Member* member = dataManager->getAuthManager()->findMemberByUsername(username)) {
-            view->displayHeader("Member Details: " + username);
+            ConsoleView::displayHeader("Member Details: " + username);
             member->displayInfo();
         } else {
             InputHelper::displayError("Member not found: " + username);
@@ -421,7 +487,7 @@ namespace EMotoRental
     }
 
     void Application::handleSystemStatistics() const {
-        view->displayHeader("System Statistics");
+        ConsoleView::displayHeader("System Statistics");
 
         const auto members = dataManager->getAuthManager()->getAllMembers();
         const auto admins = dataManager->getAuthManager()->getAllAdmins();
@@ -457,8 +523,8 @@ namespace EMotoRental
         InputHelper::waitForEnter();
     }
 
-    void Application::handleDataManagement() {
-        view->displayHeader("Data Management");
+    void Application::handleDataManagement() const {
+        ConsoleView::displayHeader("Data Management");
 
         std::cout << "1. Save All Data Now" << std::endl;
         std::cout << "2. Validate Data Consistency" << std::endl;
@@ -477,7 +543,7 @@ namespace EMotoRental
                 }
                 break;
             case 2:
-                if (dataManager->validateDataConsistency()) {
+                if (DataManager::validateDataConsistency()) {
                     InputHelper::displaySuccess("Data consistency validation passed!");
                 } else {
                     InputHelper::displayError("Data consistency issues found!");
@@ -485,13 +551,13 @@ namespace EMotoRental
                 break;
             case 3:
                 if (confirmCriticalAction("cleanup orphaned files")) {
-                    dataManager->cleanupOrphanedFiles();
+                    DataManager::cleanupOrphanedFiles();
                     InputHelper::displaySuccess("Orphaned files cleanup completed!");
                 }
                 break;
             case 4: {
-                const auto memberFiles = dataManager->listMembers();
-                const auto adminFiles = dataManager->listAdmins();
+                const auto memberFiles = DataManager::listMembers();
+                const auto adminFiles = DataManager::listAdmins();
                 std::cout << "Member files: " << memberFiles.size() << std::endl;
                 std::cout << "Admin files: " << adminFiles.size() << std::endl;
                 InputHelper::displayMessage("Data files are stored in individual files for efficient updates.");
@@ -499,6 +565,7 @@ namespace EMotoRental
             }
             case 0:
                 return;
+            default: ;
         }
 
         InputHelper::waitForEnter();
@@ -526,5 +593,21 @@ namespace EMotoRental
 
     bool Application::confirmCriticalAction(const std::string& action) {
         return InputHelper::confirmAction("Are you sure you want to " + action + "?");
+    }
+
+    // =========================================== HELPER METHODS ======================================================
+
+    bool Application::isUserLoggedIn() const {
+        return dataManager->getAuthManager()->getCurrentUser() != nullptr;
+    }
+
+    bool Application::isMember() const {
+        if (!isUserLoggedIn()) return false;
+        return dataManager->getAuthManager()->getCurrentUser()->getUserType() == "Member";
+    }
+
+    bool Application::isAdmin() const {
+        if (!isUserLoggedIn()) return false;
+        return dataManager->getAuthManager()->getCurrentUser()->getUserType() == "Admin";
     }
 }
