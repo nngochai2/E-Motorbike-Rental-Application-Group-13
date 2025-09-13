@@ -5,268 +5,285 @@
 #include "MotorbikeManager.h"
 #include "../utils/FileHandler.h"
 #include <iostream>
-#include <sstream>
 #include <algorithm>
 #include <iomanip>
-
-#include "../utils/FileHandler.h"
 
 namespace EMotoRental
 {
     // ============================================ CONSTRUCTOR & DESTRUCTOR ===========================================
 
     MotorbikeManager::MotorbikeManager() {
-        // Load motorbikes from file during initialization
-        loadAllMotorbikes();
-        std::cout << "MotorbikeManager initialized with " << motorbikes.size() << " motorbikes." << std::endl;
+        std::cout << "MotorbikeManager: Initialized." << std::endl;
     }
 
     MotorbikeManager::~MotorbikeManager() {
-
         std::cout << "MotorbikeManager: Cleaning up..." << std::endl;
-        // Clean up memory
         cleanupMemory();
-        std::cout << "AuthManager: Data saved and resources cleaned up." << std::endl;
     }
 
     // ============================================ CORE MOTORBIKE MANAGEMENT ==========================================
 
-    // ========================================= REGISTRATION AND LISTING MANAGEMENT =================================
-
-    bool MotorbikeManager::registerMotorbike(
-        const std::string& ownerUsername,
-        const std::string& brand,
-        const std::string& model,
-        const std::string& color,
-        int engineSize,
-        const std::string& licensePlate,
-        const std::string& city)
-    {
-        // Validate inputs
-        if (ownerUsername.empty() || brand.empty() || model.empty() ||
-            color.empty() || engineSize <= 0 || licensePlate.empty() || city.empty())
-        {
-            std::cout << "Registration failed: All fields are required." << std::endl;
+    bool MotorbikeManager::registerMotorbike(const MotorbikeRegistrationData& data) {
+        // Validate input data
+        if (data.brand.empty() || data.model.empty() || data.licensePlate.empty()) {
+            std::cout << "Registration failed: Brand, model, and license plate are required." << std::endl;
             return false;
         }
 
-        // Check if a motorbike with the same license plate already exists
-        for (auto motorbike : motorbikes) {
-            if (motorbike->getLicensePlate() == licensePlate) {
-                std::cout << "Registration failed: License plate already registered." << std::endl;
-                return false;
-            }
+        // Check if license plate is unique
+        if (!isLicensePlateUnique(data.licensePlate)) {
+            std::cout << "Registration failed: License plate '" << data.licensePlate
+                << "' is already registered." << std::endl;
+            return false;
         }
 
-        // Create a new Motorbike
-        auto* newMotorbike = new Motorbike(brand, model, color, engineSize, licensePlate, city, ownerUsername);
-        motorbikes.push_back(newMotorbike);
+        try {
+            // Create new motorbike
+            auto* newMotorbike = new Motorbike(data.brand, data.model, data.color, data.engineSize, data.yearMade,
+                                               data.licensePlate, data.city, data.ownerUsername);
 
-        // Save the updated list to file
-        saveAllMotorbikes();
+            // Add to collection
+            motorbikes.push_back(newMotorbike);
 
-        std::cout << "Motorbike registration successful: " << newMotorbike->getMotorbikeId() << std::endl;
-        return true;
+            std::cout << "Motorbike registered successfully!" << std::endl;
+            std::cout << "License Plate: " << data.licensePlate << std::endl;
+            std::cout << "Owner: " << data.ownerUsername << std::endl;
+
+            // DataManager will handle data persistence externally
+            return true;
+        }
+        catch (const std::exception& e) {
+            std::cout << "Registration failed: " << e.what() << std::endl;
+            return false;
+        }
     }
 
-    bool MotorbikeManager::listMotorbike(
-        const std::string& motorbikeId,
-        const DateUtil::TimePoint& startDate,
-        const DateUtil::TimePoint& endDate,
-        double dailyRate,
-        double minRating)
-    {
-        // Find the motorbike by ID
-        auto* motorbike = getMotorbikeById(motorbikeId);
+    bool MotorbikeManager::listMotorbike(const std::string& plate, const MotorbikeListingData& listingData) const {
+        // Find the motorbike by license plate
+        auto* motorbike = getMotorbikeByLicensePlate(plate);
         if (!motorbike) {
-            std::cout << "Listing failed: Motorbike not found." << std::endl;
+            std::cout << "Listing failed: Motorbike with license plate '" << plate << "' not found." << std::endl;
             return false;
         }
 
-        // Try to list the motorbike for rent
-        bool result = motorbike->listForRent(startDate, endDate, dailyRate, minRating);
+        // Use the motorbike's own listing logic
+        const bool success = motorbike->listForRent(listingData.startDate, listingData.endDate, listingData.dailyRate,
+                                                    listingData.minRenterRating);
 
-        // Save the updated list to file if successful
-        if (result) {
-            saveAllMotorbikes();
-            std::cout << "Motorbike successfully listed for rent." << std::endl;
-        }
-
-        return result;
+        return success;
     }
 
-    bool MotorbikeManager::unlistMotorbike(const std::string& motorbikeId)
-    {
-        // Find the motorbike by ID
-        auto* motorbike = getMotorbikeById(motorbikeId);
+    bool MotorbikeManager::unlistMotorbike(const std::string& plate) const {
+        // Find the motorbike by license plate
+        auto* motorbike = getMotorbikeByLicensePlate(plate);
         if (!motorbike) {
-            std::cout << "Unlisting failed: Motorbike not found." << std::endl;
+            std::cout << "Unlisting failed: Motorbike with ID '" << plate << "' not found." << std::endl;
             return false;
         }
 
-        // Try to unlist the motorbike
-        bool result = motorbike->unlist();
+        // Use the motorbike's own unlisting logic
+        const bool success = motorbike->unlist();
 
-        // Save the updated list to file if successful
-        if (result) {
-            saveAllMotorbikes();
-            std::cout << "Motorbike successfully unlisted." << std::endl;
-        }
-
-        return result;
+        return success;
     }
 
-    // ========================================= SEARCH AND RETRIEVAL METHODS =======================================
+    // ========================================== SEARCH AND RETRIEVAL METHODS =========================================
 
-    std::vector<Motorbike*> MotorbikeManager::searchMotorbikes(
-        const std::string& city,
-        const DateUtil::TimePoint& startDate,
-        const DateUtil::TimePoint& endDate) const
-    {
+    std::vector<Motorbike*> MotorbikeManager::searchMotorbikes(const std::string& city,
+                                                               const DateUtil::TimePoint& startDate,
+                                                               const DateUtil::TimePoint& endDate) const {
         std::vector<Motorbike*> results;
 
-        for (auto motorbike : motorbikes) {
-            // Filter by city if specified
-            if (!city.empty() && motorbike->getCity() != city) {
-                continue;
-            }
-
-            // Check availability for the specified date range
-            if (motorbike->isAvailable(startDate, endDate)) {
+        for (auto* motorbike : motorbikes) {
+            // Check if motorbike matches search criteria
+            if (motorbike->getCity() == city && motorbike->isAvailable(startDate, endDate)) {
                 results.push_back(motorbike);
             }
+
+            // Sort results by rating (highest first)
+            std::ranges::sort(results,
+                              [](const Motorbike* a, const Motorbike* b) {
+                                  return a->getMotorbikeRating() > b->getMotorbikeRating();
+                              });
+
+            return results;
         }
 
         std::cout << "Found " << results.size() << " matching motorbikes." << std::endl;
         return results;
     }
 
-    Motorbike* MotorbikeManager::getMotorbikeById(const std::string& motorbikeId) const
-    {
-        for (auto motorbike : motorbikes) {
-            if (motorbike->getMotorbikeId() == motorbikeId) {
+    std::vector<Motorbike*> MotorbikeManager::getAllListedMotorbikes() const {
+        std::vector<Motorbike*> listedMotorbikes;
+
+        for (Motorbike* motorbike : motorbikes) {
+            if (motorbike->getIsListed()) {
+                listedMotorbikes.push_back(motorbike);
+            }
+        }
+
+        return listedMotorbikes;
+    }
+
+    // ======================================= INDIVIDUAL MOTORBIKE RETRIEVAL ==========================================
+
+    Motorbike* MotorbikeManager::getMotorbikeByLicensePlate(const std::string& plate) const {
+        for (auto* motorbike : motorbikes) {
+            if (motorbike->getLicensePlate() == plate) {
                 return motorbike;
             }
         }
-        return nullptr; // Not found
+
+        return nullptr;
     }
 
-    std::vector<Motorbike*> MotorbikeManager::getMotorbikesByOwner(const std::string& username) const
-    {
+    Motorbike* MotorbikeManager::getMotorbikeByOwner(const std::string& ownerUsername) const {
         std::vector<Motorbike*> results;
 
-        for (auto motorbike : motorbikes) {
-            if (motorbike->getOwnerUsername() == username) {
-                results.push_back(motorbike);
+        for (auto* motorbike : motorbikes) {
+            if (motorbike->getOwnerUsername() == ownerUsername) {
+                return motorbike;
             }
         }
 
-        return results;
+        return nullptr;
     }
 
-    std::vector<Motorbike*> MotorbikeManager::getAllMotorbikes() const
-    {
-        return motorbikes;
-    }
+    // ============================================ RATING MANAGEMENT ==================================================
 
-    // ========================================= RATING SYSTEM ======================================================
-
-    bool MotorbikeManager::updateMotorbikeRating(const std::string& motorbikeId, double rating)
-    {
+    void MotorbikeManager::updateMotorbikeRating(const std::string& plate, const double newRating) {
         // Find the motorbike by ID
-        auto* motorbike = getMotorbikeById(motorbikeId);
-        if (!motorbike) {
-            std::cout << "Rating update failed: Motorbike not found." << std::endl;
-            return false;
+        if (auto* motorbike = getMotorbikeByLicensePlate(plate)) {
+            motorbike->updateRating(newRating);
+            std::cout << "MotorbikeManager: Rating updated for motorbike " << plate << std::endl;
+        } else {
+            std::cout << "Warning: Cannot update rating for motorbike '" << plate
+                      << "' - motorbike not found." << std::endl;
+        }
+    }
+
+    // ========================================== VALIDATION METHODS ===================================================
+
+    bool MotorbikeManager::isLicensePlateUnique(const std::string& licensePlate) const {
+        for (const Motorbike* motorbike : motorbikes) {
+            if (motorbike->getLicensePlate() == licensePlate) {
+                return false;
+            }
         }
 
-        // Update the rating
-        motorbike->updateRating(rating);
-
-        // Save the updated list to file
-        saveAllMotorbikes();
-
-        std::cout << "Motorbike rating updated successfully." << std::endl;
         return true;
     }
 
-    // ========================================= DATA PERSISTENCE METHODS ============================================
+    bool MotorbikeManager::canOwnerRegisterMotorbike(const std::string& ownerUsername) const {
+        // Project requirement: Each member can register only one motorbike
+        for (const Motorbike* motorbike : motorbikes) {
+            if (motorbike->getOwnerUsername() == ownerUsername) {
+                return false;
+            }
+        }
 
-    bool MotorbikeManager::loadAllMotorbikes()
+        return true;
+    }
+
+    // =========================================== DATA MANAGEMENT =====================================================
+
+    void MotorbikeManager::addMotorbike(Motorbike* motorbike) {
+        if (motorbike) {
+            motorbikes.push_back(motorbike);
+        }
+    }
+
+    // ======================================= STATISTICS AND UTILITIES ================================================
+
+    int MotorbikeManager::getTotalMotorbikeCount() const {
+        return static_cast<int>(motorbikes.size());
+    }
+
+    int MotorbikeManager::getListedMotorbikeCount() const {
+        int count = 0;
+        for (const Motorbike* motorbike : motorbikes) {
+            if (motorbike->getIsListed()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    std::vector<std::string> MotorbikeManager::getAllCities() const {
+        std::vector<std::string> cities;
+
+        for (const Motorbike* motorbike : motorbikes) {
+            if (std::string city = motorbike->getCity(); std::ranges::find(cities, city) == cities.end()) {
+                cities.push_back(city);
+            }
+        }
+
+        return cities;
+    }
+
+    // =========================================== DISPLAY METHODS =====================================================
+
+    void MotorbikeManager::displayAllMotorbikes() const
     {
-        try {
-            // Check if file exists
-            if (!FileHandler::fileExists("data/motorbikes.csv")) {
-                std::cout << "Motorbikes file not found. Starting with empty motorbike list." << std::endl;
-                return true; // Not an error, just an empty system
-            }
+        std::cout << "\n========== ALL REGISTERED MOTORBIKES ==========" << std::endl;
 
-            // Read file content
-            const std::string content = FileHandler::readFromFile("data/motorbikes.csv");
-            if (content.empty()) {
-                std::cout << "Motorbikes file is empty." << std::endl;
-                return true;
-            }
+        if (motorbikes.empty()) {
+            std::cout << "No motorbikes registered in the system." << std::endl;
+            std::cout << "===============================================" << std::endl;
+            return;
+        }
 
-            // Clear existing motorbikes
-            for (auto motorbike : motorbikes) {
-                delete motorbike;
-            }
-            motorbikes.clear();
+        int index = 1;
+        for (const Motorbike* motorbike : motorbikes) {
+            std::cout << "\n--- Motorbike #" << index++ << " ---" << std::endl;
+            motorbike->displayDetails();
+        }
 
-            // Parse CSV content
-            std::istringstream iss(content);
-            std::string line;
-            int loadedCount = 0;
+        std::cout << "\nTotal: " << motorbikes.size() << " motorbikes registered." << std::endl;
+        std::cout << "===============================================" << std::endl;
+    }
 
-            while (std::getline(iss, line)) {
-                if (!line.empty()) {
-                    if (Motorbike* motorbike = Motorbike::fromCSVString(line); motorbike != nullptr) {
-                        motorbikes.push_back(motorbike);
-                        loadedCount++;
-                    } else {
-                        std::cout << "Warning: Failed to parse motorbike data: " << line << std::endl;
-                    }
+    void MotorbikeManager::displayMotorbikeStatistics() const
+    {
+        std::cout << "\n========== MOTORBIKE STATISTICS ==========" << std::endl;
+
+        int totalCount = getTotalMotorbikeCount();
+        int listedCount = getListedMotorbikeCount();
+        int unlistedCount = totalCount - listedCount;
+
+        std::cout << "Total Motorbikes: " << totalCount << std::endl;
+        std::cout << "Listed for Rent: " << listedCount << std::endl;
+        std::cout << "Not Listed: " << unlistedCount << std::endl;
+
+        if (totalCount > 0) {
+            double listedPercentage = (static_cast<double>(listedCount) / totalCount) * 100;
+            std::cout << "Listing Rate: " << std::fixed << std::setprecision(1)
+                      << listedPercentage << "%" << std::endl;
+        }
+
+        // City distribution
+        const std::vector<std::string> cities = getAllCities();
+        std::cout << "\nCity Distribution:" << std::endl;
+        for (const std::string& city : cities) {
+            int cityCount = 0;
+            for (const Motorbike* motorbike : motorbikes) {
+                if (motorbike->getCity() == city) {
+                    cityCount++;
                 }
             }
-
-            std::cout << "Loaded " << loadedCount << " motorbikes from file." << std::endl;
-            return true;
-        } catch (const std::exception& e) {
-            std::cout << "Error loading motorbikes: " << e.what() << std::endl;
-            return false;
+            std::cout << "  " << city << ": " << cityCount << " motorbikes" << std::endl;
         }
+
+        std::cout << "===========================================" << std::endl;
     }
 
-    bool MotorbikeManager::saveAllMotorbikes() const
-    {
-        try {
-            if (motorbikes.empty()) {
-                std::cout << "No motorbikes to save" << std::endl;
-                return true;
-            }
+    // =========================================== HELPER METHODS ======================================================
 
-            // Create CSV content
-            std::ostringstream oss;
-
-            // Add motorbike data
-            for (const Motorbike* motorbike : motorbikes) {
-                oss << motorbike->toCSVString() << "\n";
-            }
-
-            // Write to file
-            bool success = FileHandler::writeToFile(oss.str(), "data/motorbikes.csv");
-
-            if (success) {
-                std::cout << "Successfully saved " << motorbikes.size() << " motorbikes to file." << std::endl;
-            } else {
-                std::cout << "Failed to save motorbikes to file." << std::endl;
-            }
-
-            return success;
-        } catch (std::exception& e) {
-            std::cout << "Error saving motorbikes: " << e.what() << std::endl;
-            return false;
+    void MotorbikeManager::cleanupMemory() {
+        for (const Motorbike* motorbike : motorbikes) {
+            delete motorbike;
         }
+        motorbikes.clear();
     }
+
 }

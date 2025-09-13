@@ -25,7 +25,7 @@ namespace EMotoRental
         std::string ownerUsername;
 
         MotorbikeRegistrationData(const std::string& brand, const std::string& model,
-                                 const std::string& color, int engineSize, int yearMade,
+                                 const std::string& color, int engineSize, int yearzMade,
                                  const std::string& plate, const std::string& city,
                                  const std::string& owner)
             : brand(brand), model(model), color(color), engineSize(engineSize),
@@ -50,47 +50,38 @@ namespace EMotoRental
     private:
         std::vector<Motorbike*> motorbikes;
 
+        // Helper methods for memory management
+        void cleanupMemory();
+
     public:
         MotorbikeManager();
         ~MotorbikeManager();
 
         // Registration and listing management
-        bool registerMotorbike(
-            const std::string& ownerUsername,
-            const std::string& brand,
-            const std::string& model,
-            const std::string& color,
-            int engineSize,
-            const std::string& licensePlate,
-            const std::string& city
-        );
-
-        bool listMotorbike(
-            const std::string& motorbikeId,
-            const DateUtil::TimePoint& startDate,
-            const DateUtil::TimePoint& endDate,
-            double dailyRate,
-            double minRating
-        );
-
-        bool unlistMotorbike(const std::string& motorbikeId);
+        bool registerMotorbike(const MotorbikeRegistrationData& data);
+        bool listMotorbike(const std::string& plate, const MotorbikeListingData& listingData) const;
+        bool unlistMotorbike(const std::string& plate) const;
 
         // Search and retrieval methods
-        std::vector<Motorbike*> searchMotorbikes(
-            const std::string& city,
-            const DateUtil::TimePoint& startDate,
-            const DateUtil::TimePoint& endDate
-        ) const;
-        Motorbike* getMotorbikeById(const std::string& motorbikeId) const;
-        std::vector<Motorbike*> getMotorbikesByOwner(const std::string& username) const;
+        std::vector<Motorbike*> searchMotorbikes(const std::string& city,
+                                                const DateUtil::TimePoint& startDate,
+                                                const DateUtil::TimePoint& endDate) const;
+        std::vector<Motorbike*> getAllListedMotorbikes() const;
         std::vector<Motorbike*> getAllMotorbikes() const;
 
-        // Rating system
-        bool updateMotorbikeRating(const std::string& motorbikeId, double rating);
+        // Individual motorbike retrieval
+        Motorbike* getMotorbikeByLicensePlate(const std::string& plate) const;
+        Motorbike* getMotorbikeByOwner(const std::string& ownerUsername) const;
 
-        // Data persistence methods
-        bool loadAllMotorbikes();
-        bool saveAllMotorbikes() const;
+        // Rating management (called by RentalManager)
+        void updateMotorbikeRating(const std::string& plate, double newRating);
+
+        // Validation methods
+        bool isLicensePlateUnique(const std::string& licensePlate) const;
+        bool canOwnerRegisterMotorbike(const std::string& ownerUsername) const;
+
+        // Data management (for DataManager to use)
+        void addMotorbike(Motorbike* motorbike);
 
         // Statistics and utilities
         int getTotalMotorbikeCount() const;
@@ -100,8 +91,5 @@ namespace EMotoRental
         // Display methods (for admin and debugging)
         void displayAllMotorbikes() const;
         void displayMotorbikeStatistics() const;
-
-    private:
-        void cleanupMemory();
     };
 }
