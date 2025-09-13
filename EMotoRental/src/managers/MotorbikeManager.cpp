@@ -125,6 +125,10 @@ namespace EMotoRental
         return listedMotorbikes;
     }
 
+    std::vector<Motorbike*> MotorbikeManager::getAllMotorbikes() const {
+        return motorbikes;
+    }
+
     // ======================================= INDIVIDUAL MOTORBIKE RETRIEVAL ==========================================
 
     Motorbike* MotorbikeManager::getMotorbikeByLicensePlate(const std::string& plate) const {
