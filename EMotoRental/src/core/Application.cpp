@@ -355,7 +355,7 @@ namespace EMotoRental
     }
 
     void Application::handleMotorbikeRegistration() {
-        if (!isUserLoggedIn() || isMember()) {
+        if (!isUserLoggedIn() || !isMember()) {
             InputHelper::displayError("Please log in as a member to register a motorbike.");
             return;
         }
@@ -400,7 +400,7 @@ namespace EMotoRental
             }
 
             // Create registration data
-            MotorbikeRegistrationData regData(brand, model, color, engineSize, yearMade, licensePlate, city,
+            const MotorbikeRegistrationData regData(brand, model, color, engineSize, yearMade, licensePlate, city,
                                         currentMember->getUsername());
 
             // Register and save through DataManager
@@ -419,25 +419,208 @@ namespace EMotoRental
                 InputHelper::displayError("Failed to register motorbike. Please try again.");
             }
 
-        } catch (const std::exception& e) {
+        } catch ([[maybe_unused]] const std::exception& e) {
             InputHelper::displayError("Failed to register motorbike. Please try again.");
         }
 
         InputHelper::waitForEnter();
     }
 
-    void Application::handleMotorbikeListing() {
-        InputHelper::displayMessage("Motorbike Listing feature coming soon!");
-        InputHelper::displayMessage("This will allow motorbike owners to list their bike for rent.");
-        InputHelper::displayMessage("Required info: availability period, daily rate, minimum renter rating");
+    void Application::handleMotorbikeListing() const {
+        if (!isUserLoggedIn() || !isMember()) {
+            InputHelper::displayError("Please log in as a member to list a motorbike.");
+            return;
+        }
+
+        const auto currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+
+        // Check if member owns a motorbike
+        const Motorbike* ownedBike = dataManager->getMotorbikeManager()->getMotorbikeByOwner(currentMember->getUsername());
+        if (!ownedBike) {
+            InputHelper::displayError("You don't own a motorbike. Please register one first.");
+            InputHelper::waitForEnter();
+            return;
+        }
+
+        ConsoleView::displayHeader("List Motorbike for Rent");
+
+        // Display current motorbike details
+        std::cout << "Your motorbike: " << std::endl;
+        ownedBike->displayDetails();
+
+        if (ownedBike->getIsListed()) {
+            std::cout << "This motorbike is already listed for rent." << std::endl;
+            if (InputHelper::confirmAction("Do you want to update the listing?")) {
+                // Unlist first, then re-list with new data
+                dataManager->unlistAndSaveMotorbike(ownedBike->getLicensePlate());
+            } else {
+                InputHelper::waitForEnter();
+                return;
+            }
+        }
+
+        try {
+            // Get listing details from user
+            DateUtil::TimePoint startDate = InputHelper::getDateInput("Enter availability start date");
+            DateUtil::TimePoint endDate = InputHelper::getDateInput("Enter availability end date");
+
+            double dailyRate = InputHelper::getDoubleInput("Enter daily rate (in CP): ");
+            if (dailyRate <= 0) {
+                InputHelper::displayError("Daily rate must be greater than 0.");
+                InputHelper::waitForEnter();
+                return;
+            }
+
+            double minRating = InputHelper::getDoubleInput("Enter minimum rating (1.0-5.0): ");
+            if (minRating < 1.0 || minRating > 5.0) {
+                InputHelper::displayError("Minimum rating must be between 1.0 and 5.0.");
+                InputHelper::waitForEnter();
+                return;
+            }
+
+            // Create listing data
+            MotorbikeListingData listingData(startDate, endDate, dailyRate, minRating);
+
+            // List and save through DataManager
+            if (dataManager->listAndSaveMotorbike(ownedBike->getLicensePlate(), listingData)) {
+                InputHelper::displaySuccess("Motorbike listed for rent successfully!");
+                ownedBike->displayPublicInfo();
+            } else {
+                InputHelper::displayError("Failed to list motorbike. Please try again.");
+            }
+
+        } catch (const std::exception& e) {
+            InputHelper::displayError("Listing failed: " + std::string(e.what()));
+        }
+
         InputHelper::waitForEnter();
     }
 
-    void Application::handleMotorbikeSearch() {
-        InputHelper::displayMessage("Motorbike Search feature coming soon!");
-        InputHelper::displayMessage("This will allow members to search for available motorbikes.");
-        InputHelper::displayMessage("Search criteria: city, date range, engine size, rating requirements");
+    void Application::handleMotorbikeSearch() const {
+        ConsoleView::displayHeader("Search Motorbikes");
+
+        try {
+            // Get search criteria from user
+            std::string city;
+            while (true) {
+                city = InputHelper::getStringInput("Enter city to search (HCMC/Hanoi): ");
+                if (city == "HCMC" || city == "Hanoi") {
+                    break;
+                }
+                InputHelper::displayError("City must be either 'HCMC' or 'Hanoi'.");
+            }
+
+            DateUtil::TimePoint startDate = InputHelper::getDateInput("Enter rental start date");
+            DateUtil::TimePoint endDate = InputHelper::getDateInput("Enter rental end date");
+
+            // Search motorbikes
+            auto results = dataManager->getMotorbikeManager()->searchMotorbikes(city, startDate, endDate);
+
+            if (results.empty()) {
+                InputHelper::displayMessage("No motorbikes found matching your search criteria.");
+                InputHelper::waitForEnter();
+                return;
+            }
+
+            std::cout << "\n========== SEARCH RESULTS ==========" << std::endl;
+            std::cout << "Found " << results.size() << " available motorbikes:" << std::endl;
+
+            for (size_t i = 0; i < results.size(); i++) {
+                std::cout << "\n--- Result #" << (i + 1) << " ---" << std::endl;
+
+                if (isUserLoggedIn() && isMember()) {
+                    // Members see full info
+                    results[i]->displayPublicInfo();
+
+                    // Check if member meets requirements
+                    Member* currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+                    if (results[i]->meetsRequirement(*currentMember)) {
+                        std::cout << "✓ You meet the requirements for this motorbike." << std::endl;
+                    } else {
+                        std::cout << "✗ You don't meet the requirements for this motorbike." << std::endl;
+                    }
+                } else {
+                    // Guest see limited info only
+                    displayGuestMotorbikeInfo(results[i]);
+                }
+            }
+
+            std::cout << "====================================" << std::endl;
+
+        } catch (const std::exception& e) {
+            InputHelper::displayError("Search failed: " + std::string(e.what()));
+        }
+
         InputHelper::waitForEnter();
+    }
+
+    void Application::displayGuestMotorbikeInfo(const Motorbike* bike) const {
+        // Project requirement: Guests can only see brand, model, engine size, location
+        std::cout << "Brand: " << bike->getBrand() << " | Model: " << bike->getModel() << std::endl;
+        std::cout << "Engine: " << bike->getEngineSize() << "cc | City: " << bike->getCity() << std::endl;
+        std::cout << "Year: " << bike->getYearMade() << std::endl;
+        std::cout << "----------------------------------------" << std::endl;
+    }
+
+    void Application::handleMotorbikeManagement() {
+        if (!isUserLoggedIn() || !isMember()) {
+            InputHelper::displayError("Please log in as a member.");
+            return;
+        }
+
+        const auto currentMember = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        const Motorbike* ownedBike = dataManager->getMotorbikeManager()->getMotorbikeByOwner(currentMember->getUsername());
+
+        ConsoleView::displayHeader("Motorbike Management");
+
+        if (!ownedBike) {
+            std::cout << "You don't own a motorbike yet." << std::endl;
+            std::cout << "1. Register Motorbike" << std::endl;
+            std::cout << "0. Back to Main Menu" << std::endl;
+
+            if (int choice = InputHelper::getMenuChoice(0, 1); choice == 1) {
+                handleMotorbikeRegistration();
+            }
+            return;
+        }
+
+        // Show current motorbike status
+        std::cout << "Your Motorbike:" << std::endl;
+        ownedBike->displayDetails();
+
+        std::cout << "\nManagement Options:" << std::endl;
+        std::cout << "1. " << (ownedBike->getIsListed() ? "Update Listing" : "List for Rent") << std::endl;
+        if (ownedBike->getIsListed()) {
+            std::cout << "2. Unlist Motorbike" << std::endl;
+        }
+        std::cout << "3. View Motorbike Details" << std::endl;
+        std::cout << "0. Back to Main Menu" << std::endl;
+
+        int maxChoice = ownedBike->getIsListed() ? 3 : 3;
+        int choice = InputHelper::getMenuChoice(0, maxChoice);
+
+        switch (choice) {
+        case 1:
+            handleMotorbikeListing();
+            break;
+        case 2:
+            if (ownedBike->getIsListed()) {
+                if (InputHelper::confirmAction("Are you sure you want to unlist your motorbike?")) {
+                    if (dataManager->unlistAndSaveMotorbike(ownedBike->getLicensePlate())) {
+                        InputHelper::displaySuccess("Motorbike unlisted successfully!");
+                    } else {
+                        InputHelper::displayError("Failed to unlist motorbike.");
+                    }
+                    InputHelper::waitForEnter();
+                }
+            }
+            break;
+        case 3:
+            ownedBike->displayDetails();
+            InputHelper::waitForEnter();
+            break;
+        default: ;
+        }
     }
 
     void Application::handleRentalHistory() const {
@@ -466,10 +649,17 @@ namespace EMotoRental
         InputHelper::waitForEnter();
     }
 
-    void Application::handleViewAllMotorbikes() {
-        InputHelper::displayMessage("View All Motorbikes feature coming soon!");
-        InputHelper::displayMessage("This will display all registered motorbikes in the system.");
-        InputHelper::displayMessage("Including: brand, model, owner, listing status, ratings");
+    void Application::handleViewAllMotorbikes() const {
+        if (!isUserLoggedIn() || !isAdmin()) {
+            InputHelper::displayError("Admin access required.");
+            return;
+        }
+
+        ConsoleView::displayHeader("All Registered Motorbikes");
+
+        dataManager->getMotorbikeManager()->displayAllMotorbikes();
+        dataManager->getMotorbikeManager()->displayMotorbikeStatistics();
+
         InputHelper::waitForEnter();
     }
 

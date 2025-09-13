@@ -46,13 +46,17 @@ namespace EMotoRental
         void handlePasswordChange();
         void handleCreditTopUp();
         void handleMotorbikeRegistration();
-        void handleMotorbikeListing();
-        void handleMotorbikeSearch();
         void handleRentalHistory() const;
+
+        // Motorbike feature handlers
+        void handleMotorbikeListing() const;
+        void handleMotorbikeSearch() const;
+        void displayGuestMotorbikeInfo(const Motorbike* bike) const;
+        void handleMotorbikeManagement();
 
         // Admin feature handlers
         void handleViewAllMembers() const;
-        static void handleViewAllMotorbikes();
+        void handleViewAllMotorbikes() const;
         void handleViewMemberDetails() const;
         void handleSystemStatistics() const;
         void handleDataManagement() const;
