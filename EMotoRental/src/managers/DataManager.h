@@ -35,8 +35,8 @@ namespace EMotoRental
 
         // Data lifecycle
         static bool initializeSystem();
-        bool loadAllData();
-        bool saveAllData();
+        bool loadAllData() const;
+        bool saveAllData() const;
         void shutdown();
 
         // Individual entity operations (efficient updates)
@@ -50,6 +50,8 @@ namespace EMotoRental
 
         static bool saveMotorbike(const Motorbike* motorbike);
         static bool loadMotorbike(const std::string& licensePlate, Motorbike*& motorbike);
+        static bool deleteMotorbike(const std::string& licensePlate);
+        bool updateMotorbike(const Motorbike* motorbike);
 
         // Data integrity
         static bool validateDataConsistency();
@@ -60,6 +62,11 @@ namespace EMotoRental
         static std::vector<std::string> listMembers();
         static std::vector<std::string> listAdmins();
         static std::vector<std::string> listMotorbikes();
+
+        // Convenience methods
+        bool registerAndSaveMotorbike(const MotorbikeRegistrationData& registrationData);
+        bool listAndSaveMotorbike(const std::string& licensePlate, const MotorbikeListingData& listingData);
+        bool unlistAndSaveMotorbike(const std::string& licensePlate);
 
     private:
         // Helper methods
