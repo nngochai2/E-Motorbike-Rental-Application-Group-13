@@ -32,7 +32,6 @@ namespace EMotoRental
         // Authentication flows
         bool handleMemberLogin() const;
         bool handleAdminLogin() const;
-        void handleMemberRegistration() const;
         void handleLogout() const;
 
         // Menu handlers
@@ -47,6 +46,11 @@ namespace EMotoRental
         void handleCreditTopUp();
         void handleMotorbikeRegistration();
         void handleRentalHistory() const;
+
+        // Guest feature handlers
+        void handleGuestMotorbikeBrowsing() const;
+        void handleGuestLocationFilter() const;
+        void handleMemberRegistration() const;
 
         // Motorbike feature handlers
         void handleMotorbikeListing() const;

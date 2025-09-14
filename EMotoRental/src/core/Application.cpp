@@ -184,14 +184,10 @@ namespace EMotoRental
 
             switch (InputHelper::getMenuChoice(0, 3)) {
             case 1:
-                InputHelper::displayMessage("Browse Available Motorbikes feature coming soon!");
-                InputHelper::displayMessage("This will show public motorbike listings with limited details.");
-                InputHelper::waitForEnter();
+                handleGuestMotorbikeBrowsing();
                 break;
             case 2:
-                InputHelper::displayMessage("Filter by Location feature coming soon!");
-                InputHelper::displayMessage("This will allow filtering motorbikes by city (HCMC/Hanoi).");
-                InputHelper::waitForEnter();
+                handleGuestLocationFilter();
                 break;
             case 3:
                 handleMemberRegistration();
@@ -280,6 +276,107 @@ namespace EMotoRental
             }
         }
     }
+
+    // ========================================= GUEST FEATURE HANDLERS ================================================
+
+    void Application::handleGuestMotorbikeBrowsing() const {
+        ConsoleView::displayMainMenu("Available Motorbikes");
+
+        // Get all listed motorbikes from MotorbikeManager
+        if (!dataManager->getMotorbikeManager()) {
+            InputHelper::displayError("Motorbike system not available.");
+            InputHelper::waitForEnter();
+            return;
+        }
+
+        auto listedMotorbikes = dataManager->getMotorbikeManager()->getAllListedMotorbikes();
+
+        if (listedMotorbikes.empty()) {
+            InputHelper::displayMessage("No motorbikes currently available for rent.");
+            InputHelper::waitForEnter();
+            return;
+        }
+
+        std::cout << "Available Motorbikes (" << listedMotorbikes.size() << " listings):" << std::endl;
+        std::cout << "Note: Register as a member to see detailed information and make bookings." << std::endl;
+        std::cout << std::endl;
+
+        // Display limited info for guests
+        for (size_t i = 0; i < listedMotorbikes.size(); ++i) {
+            std::cout << "--- Listing #" << (i + 1) << " ---" << std::endl;
+            displayGuestMotorbikeInfo(listedMotorbikes[i]);
+            std::cout << std::endl;
+        }
+
+        InputHelper::displayMessage("To see full details, rates, and availability, please register as a member.");
+        InputHelper::waitForEnter();
+    }
+
+    void Application::handleGuestLocationFilter() const {
+        ConsoleView::displayHeader("Filter by Location");
+
+        if (!dataManager->getMotorbikeManager()) {
+            InputHelper::displayError("Motorbike system not available.");
+            InputHelper::waitForEnter();
+            return;
+        }
+
+        std::cout << "Available Cities:" << std::endl;
+        std::cout << "1. HCMC" << std::endl;
+        std::cout << "2. Hanoi" << std::endl;
+        std::cout << "0. Back to Guest Menu" << std::endl;
+
+        int choice = InputHelper::getMenuChoice(0, 2);
+
+        std::string selectedCity;
+        switch (choice) {
+            case 1:
+                selectedCity = "HCMC";
+                break;
+            case 2:
+                selectedCity = "Hanoi";
+                break;
+            case 0:
+                return;
+            default:
+                InputHelper::displayError("Invalid choice.");
+                InputHelper::waitForEnter();
+                return;
+        }
+
+        // Get all motorbikes in the selected city
+        const auto allMotorbikes = dataManager->getMotorbikeManager()->getAllListedMotorbikes();
+        std::vector<Motorbike*> cityMotorbikes;
+
+        for (Motorbike* bike : allMotorbikes) {
+            if (bike->getCity() == selectedCity) {
+                cityMotorbikes.push_back(bike);
+            }
+        }
+
+        std::cout << std::endl;
+        std::cout << "Motorbikes in " << selectedCity << ":" << std::endl;
+
+        if (cityMotorbikes.empty()) {
+            InputHelper::displayMessage("No motorbikes available in " + selectedCity + ".");
+        } else {
+            std::cout << "Found " << cityMotorbikes.size() << " motorbike(s) in " << selectedCity << ":" << std::endl;
+            std::cout << std::endl;
+
+            for (size_t i = 0; i < cityMotorbikes.size(); ++i) {
+                std::cout << "--- " << selectedCity << " Listing #" << (i + 1) << " ---" << std::endl;
+                displayGuestMotorbikeInfo(cityMotorbikes[i]);
+                std::cout << std::endl;
+            }
+
+            InputHelper::displayMessage("Register as a member to see full details and make bookings!");
+        }
+
+        InputHelper::waitForEnter();
+    }
+
+
+
 
     // ========================================= MEMBER FEATURE HANDLERS ===============================================
 
@@ -559,7 +656,15 @@ namespace EMotoRental
         std::cout << "Brand: " << bike->getBrand() << " | Model: " << bike->getModel() << std::endl;
         std::cout << "Engine: " << bike->getEngineSize() << "cc | City: " << bike->getCity() << std::endl;
         std::cout << "Year: " << bike->getYearMade() << std::endl;
+        std::cout << "Status: Available for rent" << std::endl;
         std::cout << "----------------------------------------" << std::endl;
+
+        // Guests CANNOT see:
+        // - Ratings and reviews
+        // - Daily rate
+        // - Owner information
+        // - Availability dates
+        // - Minimum renter rating requirements
     }
 
     void Application::handleMotorbikeManagement() {
