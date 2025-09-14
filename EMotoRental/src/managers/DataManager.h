@@ -4,6 +4,7 @@
 
 #pragma once
 #include "AuthManager.h"
+#include "MotorbikeManager.h"
 #include <string>
 #include <vector>
 
@@ -13,7 +14,7 @@ namespace EMotoRental
     {
     private:
         AuthManager* authManager;
-        // MotorbikeManager* motorbikeManager;  // TODO: Add when implemented
+        MotorbikeManager* motorbikeManager;
         // RentalManager* rentalManager; // TODO: Add when implemented
 
         // File paths
@@ -29,13 +30,13 @@ namespace EMotoRental
 
         // Manager access
         AuthManager* getAuthManager() const;
-        // MotorbikeManager* getMotorbikeManager() const;  // TODO
+        MotorbikeManager* getMotorbikeManager() const;
         // RentalManager* getRentalManager() const; // TODO
 
         // Data lifecycle
         static bool initializeSystem();
         bool loadAllData() const;
-        bool saveAllData();
+        bool saveAllData() const;
         void shutdown();
 
         // Individual entity operations (efficient updates)
@@ -47,6 +48,11 @@ namespace EMotoRental
         static bool saveAdmin(const Admin* admin);
         static bool loadAdmin(const std::string& username, Admin*& admin);
 
+        static bool saveMotorbike(const Motorbike* motorbike);
+        static bool loadMotorbike(const std::string& licensePlate, Motorbike*& motorbike);
+        static bool deleteMotorbike(const std::string& licensePlate);
+        bool updateMotorbike(const Motorbike* motorbike);
+
         // Data integrity
         static bool validateDataConsistency();
         static void cleanupOrphanedFiles();
@@ -55,11 +61,18 @@ namespace EMotoRental
         static bool createDirectoryStructure();
         static std::vector<std::string> listMembers();
         static std::vector<std::string> listAdmins();
+        static std::vector<std::string> listMotorbikes();
+
+        // Convenience methods
+        bool registerAndSaveMotorbike(const MotorbikeRegistrationData& registrationData);
+        bool listAndSaveMotorbike(const std::string& licensePlate, const MotorbikeListingData& listingData);
+        bool unlistAndSaveMotorbike(const std::string& licensePlate);
 
     private:
         // Helper methods
         static std::string getMemberFilePath(const std::string& username);
         static std::string getAdminFilePath(const std::string& username);
+        static std::string getMotorbikeFilePath(const std::string& licensePlate);
         static bool fileExists(const std::string& filename);
         static void logDataOperation(const std::string& operation, const std::string& details);
     };

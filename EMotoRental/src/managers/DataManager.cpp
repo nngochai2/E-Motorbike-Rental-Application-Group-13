@@ -6,7 +6,6 @@
 
 #include <filesystem>
 #include <iostream>
-#include <bits/ostream.tcc>
 
 #include "FileHandler.h"
 
@@ -21,9 +20,11 @@ namespace EMotoRental
 
     DataManager::DataManager() {
         authManager = nullptr;
+        motorbikeManager = nullptr;
 
         if (initializeSystem()) {
             authManager = new AuthManager();
+            motorbikeManager = new MotorbikeManager();
             std::cout << "DataManager: System initialized successfully." << std::endl;
         } else {
             std::cerr << "DataManager: Failed to initialize system." << std::endl;
@@ -38,6 +39,10 @@ namespace EMotoRental
 
     AuthManager* DataManager::getAuthManager() const {
         return authManager;
+    }
+
+    MotorbikeManager* DataManager::getMotorbikeManager() const {
+        return motorbikeManager;
     }
 
     // ============================================= DATA LIFECYCLE ====================================================
@@ -60,6 +65,11 @@ namespace EMotoRental
 
         if (!authManager) {
             std::cerr << "DataManager: AuthManager not initialized!" << std::endl;
+            return false;
+        }
+
+        if (!motorbikeManager) {
+            std::cerr << "DataManager: MotorbikeManager not initialized!" << std::endl;
             return false;
         }
 
@@ -93,21 +103,36 @@ namespace EMotoRental
             }
         }
 
-        std::cout << "DataManager: Loaded " << loadedMembers << " members and "
-                          << loadedAdmins << " admins." << std::endl;
+        // Load all motorbikes
+        const auto motorbikeFiles = listMotorbikes();
+        int loadedMotorbikes = 0;
+        for (const std::string& licensePlate : motorbikeFiles) {
+            if (Motorbike* motorbike = nullptr; loadMotorbike(licensePlate, motorbike)) {
+                motorbikeManager->addMotorbike(motorbike);
+                loadedMotorbikes++;
+            } else {
+                std::cout << "DataManager: Warning - Failed to load motorbike: " << licensePlate << std::endl;
+                success = false;
+            }
+        }
+
+        std::cout << "DataManager: Loaded " << loadedMembers << " members, "
+              << loadedAdmins << " admins, and " << loadedMotorbikes << " motorbikes." << std::endl;
 
         // Validate data consistency
         if (success) {
             success = validateDataConsistency();
         }
 
-        logDataOperation("LOAD_ALL", "Members: " + std::to_string(loadedMembers) +
-                        ", Admins: " + std::to_string(loadedAdmins));
+        logDataOperation("LOAD_ALL",
+                    "Members: " + std::to_string(loadedMembers) +
+                        ", Admins: " + std::to_string(loadedAdmins) +
+                        ", Motorbikes: " + std::to_string(loadedMotorbikes));
 
         return success;
     }
 
-    bool DataManager::saveAllData() {
+    bool DataManager::saveAllData() const {
         std::cout << "DataManager: Saving all system data..." << std::endl;
 
         if (!authManager) {
@@ -115,12 +140,16 @@ namespace EMotoRental
             return false;
         }
 
+        if (!motorbikeManager) {
+            std::cerr << "DataManager: MotorbikeManager not initialized!" << std::endl;
+            return false;
+        }
+
         bool success = true;
-        int savedMembers = 0, savedAdmins = 0;
+        int savedMembers = 0, savedAdmins = 0, savedMotorbikes = 0;
 
         // Save all members
-        const auto members = authManager->getAllMembers();
-        for (const auto& member : members) {
+        for (const auto members = authManager->getAllMembers(); const auto& member : members) {
             if (saveMember(member)) {
                 savedMembers++;
             } else {
@@ -139,7 +168,19 @@ namespace EMotoRental
             }
         }
 
-        std::cout << "DataManager: Saved " << savedMembers << " members and " << savedAdmins << " admins." << std::endl;
+        // Save all motorbikes
+        for (const auto motorbikes = motorbikeManager->getAllMotorbikes(); const auto& motorbike : motorbikes) {
+            if (saveMotorbike(motorbike)) {
+                savedMotorbikes++;
+            } else {
+                std::cout << "DataManager: Warning - Failed to save motorbike: "
+                      << motorbike->getLicensePlate() << std::endl;
+                success = false;
+            }
+        }
+
+        std::cout << "DataManager: Saved " << savedMembers << " members, "
+                 << savedAdmins << " admins, and " << savedMotorbikes << " motorbikes." << std::endl;
 
         logDataOperation("SAVE_ALL", "Members: " + std::to_string(savedMembers) + ", Admins: "
             + std::to_string(savedAdmins));
@@ -151,12 +192,15 @@ namespace EMotoRental
         std::cout << "DataManager: Shutting down system..." << std::endl;
 
         // Save all data before cleanup
-        saveAllData();
+        if (saveAllData()) {
 
-        // Cleanup managers
-        if (authManager) {
+            // Cleanup managers
             delete authManager;
             authManager = nullptr;
+
+            // Cleanup MotorbikeManager
+            delete motorbikeManager;
+            motorbikeManager = nullptr;
         }
 
         std::cout << "DataManager: System shutdown successfully." << std::endl;
@@ -289,6 +333,85 @@ namespace EMotoRental
         }
     }
 
+    bool DataManager::saveMotorbike(const Motorbike* motorbike) {
+        if (!motorbike) return false;
+
+        try {
+            const std::string filePath = getMotorbikeFilePath(motorbike->getLicensePlate());
+            const std::string csvData = motorbike->toCSVString();
+
+            const bool success = FileHandler::writeToFile(csvData, filePath);
+
+            if (success) {
+                logDataOperation("SAVE_MOTORBIKE", motorbike->getLicensePlate());
+            }
+
+            return success;
+
+        } catch (const std::exception& e) {
+            std::cerr << "DataManager: Error saving motorbike " << motorbike->getLicensePlate()
+                  << ": " << e.what() << std::endl;
+            return false;
+        }
+    }
+
+    bool DataManager::loadMotorbike(const std::string& licensePlate, Motorbike*& motorbike) {
+        try {
+            const std::string filePath = getMotorbikeFilePath(licensePlate);
+
+            if (!fileExists(filePath)) {
+                return false;
+            }
+
+            const std::string csvData = FileHandler::readFromFile(filePath);
+            if (csvData.empty()) {
+                return false;
+            }
+
+            motorbike = Motorbike::fromCSVString(csvData);
+
+            if (motorbike) {
+                logDataOperation("LOAD_MOTORBIKE", licensePlate);
+                return true;
+            }
+
+            return false;
+
+        } catch (const std::exception& e) {
+            std::cerr << "DataManager: Error loading motorbike " << licensePlate
+                  << ": " << e.what() << std::endl;
+            return false;
+        }
+    }
+
+    bool DataManager::deleteMotorbike(const std::string& licensePlate) {
+        try {
+            const std::string filePath = getMotorbikeFilePath(licensePlate);
+
+            if (!fileExists(filePath)) {
+                return false; // File does not exist, consider as success
+            }
+
+            const bool success = std::filesystem::remove(filePath);
+
+            if (success) {
+                logDataOperation("DELETE_MOTORBIKE", licensePlate);
+            }
+
+            return success;
+
+        } catch (const std::exception& e) {
+            std::cerr << "DataManager: Error deleting motorbike " << licensePlate
+                      << ": " << e.what() << std::endl;
+            return false;
+        }
+    }
+
+    bool DataManager::updateMotorbike(const Motorbike* motorbike) {
+        // Update is same as save
+        return saveMotorbike(motorbike);
+    }
+
     // ============================================ DATA INTEGRITY =====================================================
 
     bool DataManager::validateDataConsistency() {
@@ -297,8 +420,8 @@ namespace EMotoRental
         bool isConsistent = true;
 
         // Check for duplicate usernames across member and admin
-        auto members = listMembers();
-        auto admins = listAdmins();
+        const auto members = listMembers();
+        const auto admins = listAdmins();
 
         for (const std::string& memberName : members) {
             // Check if memberName exists in admins vector
@@ -316,10 +439,71 @@ namespace EMotoRental
             }
         }
 
+        // Check motorbike owners exist as members
+        const auto motorbikeFiles = listMotorbikes();
+        for (const std::string& licensePlate : motorbikeFiles) {
+            Motorbike* motorbike = nullptr;
+            if (loadMotorbike(licensePlate, motorbike) && motorbike) {
+                const std::string ownerUsername = motorbike->getOwnerUsername();
+
+                // Check if owner exists in members list
+                bool ownerExists = false;
+                for (const std::string& memberName : members) {
+                    if (memberName == ownerUsername) {
+                        ownerExists = true;
+                        break;
+                    }
+                }
+
+                if (!ownerExists) {
+                    std::cout << "DataManager: Warning - Motorbike '" << licensePlate
+                          << "' has non-existent owner: " << ownerUsername << std::endl;
+                    isConsistent = false;
+                }
+
+                delete motorbike; // Clean up temp motorbike object
+            }
+        }
+
+        // Check for duplicate license plates
+        std::vector<std::string> allLicensePlates;
+        for (const std::string& licensePlate : motorbikeFiles) {
+            // Check if license plate already seen
+            if (std::ranges::find(allLicensePlates, licensePlate) != allLicensePlates.end()) {
+                std::cout << "DataManager: Warning - Duplicate license plate found: " << licensePlate << std::endl;
+                isConsistent = false;
+            } else {
+                allLicensePlates.push_back(licensePlate);
+            }
+        }
+
+        // NEW: Validate motorbike data integrity
+        for (const std::string& licensePlate : motorbikeFiles) {
+            if (Motorbike* motorbike = nullptr; loadMotorbike(licensePlate, motorbike) && motorbike) {
+                // Check if motorbike ID matches filename
+                if (motorbike->getLicensePlate() != licensePlate) {
+                    std::cout << "DataManager: Warning - Motorbike ID mismatch for file '" << licensePlate
+                              << "' (contains ID: " << motorbike->getLicensePlate() << ")" << std::endl;
+                    isConsistent = false;
+                }
+
+                // Check if city is valid
+                const std::string city = motorbike->getCity();
+                if (city != "HCMC" && city != "Hanoi") {
+                    std::cout << "DataManager: Warning - Invalid city '" << city
+                              << "' for motorbike " << licensePlate << std::endl;
+                    isConsistent = false;
+                }
+
+                delete motorbike; // Clean up temporary motorbike object
+            }
+        }
+
         // TODO: Add more consistency checks when other managers are implemented
-        // - Check motorbike owners exist as members
         // - Check rental participants exist
         // - Check rating references are valid
+        // - Validate rental date ranges
+        // - Check if motorbike rentals reference existing motorbikes
 
         if (isConsistent) {
             std::cout << "DataManager: Data consistency validation passed." << std::endl;
@@ -333,12 +517,79 @@ namespace EMotoRental
     void DataManager::cleanupOrphanedFiles() {
         std::cout << "DataManager: Cleaning up orphaned files..." << std::endl;
 
-        // TODO: Implement cleanup logic
-        // - Remove member files for deleted accounts
-        // - Remove motorbike files for non-existent owners
-        // - Remove rental files for deleted members
+        int cleanedFiles = 0;
 
-        logDataOperation("CLEANUP", "Orphaned files cleaned");
+        // Clea up motorbike files for non-existent owners
+        try {
+            const auto members = listMembers();
+            const auto motorbikeFiles = listMotorbikes();
+
+            for (const std::string& licensePlate : motorbikeFiles) {
+                if (Motorbike* motorbike = nullptr; loadMotorbike(licensePlate, motorbike) && motorbike) {
+                    const std::string ownerUsername = motorbike->getOwnerUsername();
+
+                    // Check if owner exists in members list
+                    bool ownerExists = false;
+                    for (const std::string& memberName : members) {
+                        if (memberName == ownerUsername) {
+                            ownerExists = true;
+                            break;
+                        }
+                    }
+
+                    if (!ownerExists) {
+                        std::cout << "DataManager: Removing orphaned motorbike file for non-existent owner: "
+                              << licensePlate << " (owner: " << ownerUsername << ")" << std::endl;
+
+                        if (deleteMotorbike(licensePlate)) {
+                            cleanedFiles++;
+                            std::cout << "DataManager: Successfully removed orphaned motorbike: " << licensePlate << std::endl;
+                        } else {
+                            std::cout << "DataManager: Failed to remove orphaned motorbike: " << licensePlate << std::endl;
+                        }
+                    }
+
+                    delete motorbike; // Clean up temp motorbike object
+                }
+            }
+
+            // Clean up any corrupted motorbike files that can't be loaded
+            for (const auto& entry : std::filesystem::directory_iterator(MOTORBIKES_DIR)) {
+                if (entry.is_regular_file() && entry.path().extension() == ".csv") {
+                    std::string fileName = entry.path().filename().string();
+                    std::string licensePlate = fileName.substr(0, fileName.size() - 4);
+
+                    // Convert back any escaped characters
+                    std::replace(licensePlate.begin(), licensePlate.end(), '_', '-');
+
+                    Motorbike* testMotorbike = nullptr;
+                    if (!loadMotorbike(licensePlate, testMotorbike)) {
+                        std::cout << "DataManager: Found corrupted motorbike file: " << fileName << std::endl;
+
+                        if (std::filesystem::remove(entry.path())) {
+                            cleanedFiles++;
+                            std::cout << "DataManager: Removed corrupted file: " << fileName << std::endl;
+                        } else {
+                            std::cout << "DataManager: Failed to remove corrupted file: " << fileName << std::endl;
+                        }
+                    }
+
+                    if (testMotorbike) {
+                        delete testMotorbike;
+                    }
+                }
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "DataManager: Error during orphaned file cleanup: " << e.what() << std::endl;
+        }
+
+        // TODO: Clean up rental files for deleted members when RentalManager is implemented
+        // - Remove rental files where renter or owner no longer exists
+        // - Clean up rating files for non-existent users
+        // - Remove booking files for deleted motorbikes
+
+        std::cout << "DataManager: Cleanup completed. Removed " << cleanedFiles << " orphaned files." << std::endl;
+        logDataOperation("CLEANUP", "Orphaned files cleaned: " + std::to_string(cleanedFiles));
     }
 
     // ============================================== SYSTEM UTILS =====================================================
@@ -398,6 +649,72 @@ namespace EMotoRental
         return usernames;
     }
 
+    std::vector<std::string> DataManager::listMotorbikes() {
+        std::vector<std::string> licensePlates;
+
+        try {
+            for (const auto& entry : std::filesystem::directory_iterator(MOTORBIKES_DIR)) {
+                if (entry.is_regular_file()) {
+                    if (std::string fileName = entry.path().filename().string();
+                        fileName.ends_with(".csv")) {
+                        std::string licensePlate = fileName.substr(0, fileName.size() - 4);
+                        licensePlates.push_back(licensePlate);
+                        }
+                }
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "DataManager: Error listing motorbikes" << e.what() << std::endl;
+        }
+
+        return licensePlates;
+    }
+
+    // ================================ CONVENIENCE METHODS FOR APPLICATION TO USE =====================================
+
+    // High-level motorbike operations for Application
+    bool DataManager::registerAndSaveMotorbike(const MotorbikeRegistrationData& registrationData) {
+        if (motorbikeManager->registerMotorbike(registrationData)) {
+            if (const Motorbike* newBike = motorbikeManager->getMotorbikeByLicensePlate(registrationData.licensePlate);
+                newBike && saveMotorbike(newBike)) {
+                std::cout << "DataManager: Motorbike '" << registrationData.licensePlate
+                            << "' registered and saved successfully." << std::endl;
+                return true;
+            }
+            std::cout << "DataManager: Failed to save registered motorbike '" << registrationData.licensePlate
+                << "'." << std::endl;
+            return false;
+        }
+        return false;
+    }
+
+    bool DataManager::listAndSaveMotorbike(const std::string& licensePlate, const MotorbikeListingData& listingData) {
+        if (motorbikeManager->listMotorbike(licensePlate, listingData)) {
+            if (const Motorbike* bike = motorbikeManager->getMotorbikeByLicensePlate(licensePlate);
+                bike && updateMotorbike(bike)) {
+                std::cout << "DataManager: Motorbike '" << licensePlate
+                        << "' listed and saved successfully." << std::endl;
+                return true;
+            }
+            std::cout << "DataManager: Failed to save listed motorbike '" << licensePlate
+                << "'." << std::endl;
+            return false;
+        }
+        return false;
+    }
+
+    bool DataManager::unlistAndSaveMotorbike(const std::string& licensePlate) {
+        if (motorbikeManager->unlistMotorbike(licensePlate)) {
+            if (const Motorbike* bike = motorbikeManager->getMotorbikeByLicensePlate(licensePlate);
+                bike && updateMotorbike(bike)) {
+                std::cout << "DataManager: Motorbike unlisted and saved successfully." << std::endl;
+                return true;
+            }
+            std::cout << "DataManager: Failed to save unlisted motorbike." << std::endl;
+            return false;
+        }
+        return false;
+    }
+
     // ========================================== PRIVATE HELPER METHODS ===============================================
 
     std::string DataManager::getMemberFilePath(const std::string& username) {
@@ -408,6 +725,15 @@ namespace EMotoRental
         return ADMINS_DIR + username + ".csv";
     }
 
+    std::string DataManager::getMotorbikeFilePath(const std::string& licensePlate) {
+        // Replace invalid filename characters in license plate
+        std::string safePlate = licensePlate;
+        std::replace(safePlate.begin(), safePlate.end(), '/', '_');
+        std::replace(safePlate.begin(), safePlate.end(), '-', '_');
+        std::replace(safePlate.begin(), safePlate.end(), ' ', '_');
+        return MOTORBIKES_DIR + licensePlate + ".csv";
+    }
+
     bool DataManager::fileExists(const std::string& filename) {
         return std::filesystem::exists(filename);
     }
@@ -416,5 +742,4 @@ namespace EMotoRental
         // Simple logging - could be enhanced to log file
         std::cout << "DataManager LOG: " << operation << " - " << details << std::endl;
     }
-
 }
