@@ -32,11 +32,10 @@ namespace EMotoRental
         // Authentication flows
         bool handleMemberLogin() const;
         bool handleAdminLogin() const;
-        void handleMemberRegistration() const;
         void handleLogout() const;
 
         // Menu handlers
-        void handleGuestMenu();
+        void handleGuestMenu() const;
         void handleMemberMenu();
         void handleAdminMenu();
 
@@ -46,20 +45,34 @@ namespace EMotoRental
         void handlePasswordChange();
         void handleCreditTopUp();
         void handleMotorbikeRegistration();
-        void handleMotorbikeListing();
-        void handleMotorbikeSearch();
-        void handleRentalHistory();
+        void handleRentalHistory() const;
+
+        // Guest feature handlers
+        void handleGuestMotorbikeBrowsing() const;
+        void handleGuestLocationFilter() const;
+        void handleMemberRegistration() const;
+
+        // Motorbike feature handlers
+        void handleMotorbikeListing() const;
+        void handleMotorbikeSearch() const;
+        void displayGuestMotorbikeInfo(const Motorbike* bike) const;
+        void handleMotorbikeManagement();
 
         // Admin feature handlers
         void handleViewAllMembers() const;
-        void handleViewAllMotorbikes();
+        void handleViewAllMotorbikes() const;
         void handleViewMemberDetails() const;
         void handleSystemStatistics() const;
-        void handleDataManagement();
+        void handleDataManagement() const;
 
         // Utility methods
         void exitApplication();
         void displaySystemInfo() const;
         static bool confirmCriticalAction(const std::string& action);
+
+        // Helper methods
+        bool isUserLoggedIn() const;
+        bool isMember() const;
+        bool isAdmin() const;
     };
 }
