@@ -18,6 +18,9 @@ namespace EMotoRental
         // Get current system time
         static TimePoint getCurrentTime();
 
+        // Get timestamp
+        static int64_t getTimestamp();
+
         // Get current year
         static int getCurrentYear();
 
