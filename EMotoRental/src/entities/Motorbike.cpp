@@ -56,7 +56,7 @@ namespace EMotoRental
         }
     }
 
-    // ============================================ CORE FUNCTIONALITY =================================================
+    // ========================================== CORE FUNCTIONALITIES =================================================
 
     bool Motorbike::listForRent(const DateUtil::TimePoint& startDate, const DateUtil::TimePoint& endDate,
                                 double dailyRate, double minRating) {
