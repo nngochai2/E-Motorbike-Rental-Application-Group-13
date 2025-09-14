@@ -12,11 +12,11 @@ namespace EMotoRental
 {
     RentalRequest::RentalRequest() : estimatedCost(0.0), status(RequestStatus::PENDING)
     {
-        // Generate a UUID for the request with a prefix
-        requestId = IdGenerator::generateId("REQ");
-        
         // Set request date to current time
         requestDate = DateUtil::getCurrentTime();
+
+        // Generate ID with timestamp
+        requestId = generateRequestId();
     }
 
     RentalRequest::RentalRequest(const std::string& renter, const std::string& motorbikeLicensePlate,
