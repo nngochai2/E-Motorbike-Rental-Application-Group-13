@@ -53,7 +53,7 @@ namespace EMotoRental
         static RentalRequest* fromCSVString(const std::string& csvData);
 
     private:
-        std::string generateRequestId() const;
+        static std::string generateRequestId();
         std::string statusToString() const;
         static RequestStatus stringToStatus(const std::string& str);
     };

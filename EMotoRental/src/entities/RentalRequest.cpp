@@ -109,64 +109,40 @@ namespace EMotoRental
 
     // ============================================ DATA PERSISTENCE ===================================================
 
-    std::string RentalRequest::toCSVString() const
-    {
+    std::string RentalRequest::toCSVString() const {
         std::ostringstream oss;
         oss << requestId << ","
             << renterUsername << ","
             << motorbikeLicensePlate << ","
             << DateUtil::formatDate(requestedStart) << ","
             << DateUtil::formatDate(requestedEnd) << ","
-            << estimatedCost << ",";
-        
-        // Convert status enum to string
-        switch (status) {
-            case RequestStatus::PENDING:
-                oss << "PENDING";
-                break;
-            case RequestStatus::APPROVED:
-                oss << "APPROVED";
-                break;
-            case RequestStatus::REJECTED:
-                oss << "REJECTED";
-                break;
-        }
-        
-        oss << "," << DateUtil::formatDate(requestDate);
-        
+            << std::fixed << std::setprecision(2) << estimatedCost << ","
+            << statusToString() << ","  // ← Using helper method now
+            << DateUtil::formatDate(requestDate);
         return oss.str();
     }
 
-    RentalRequest* RentalRequest::fromCSVString(const std::string& csvData)
-    {
+    RentalRequest* RentalRequest::fromCSVString(const std::string& csvData) {
         std::vector<std::string> tokens = FileHandler::parseCSVLine(csvData);
-        
+
         if (tokens.size() < 8) {
-            std::cerr << "Invalid rental request CSV data: not enough fields" << std::endl;
+            std::cerr << "Invalid rental request CSV data: not enough fields ("
+                      << tokens.size() << " < 8)" << std::endl;
             return nullptr;
         }
-        
+
         try {
             auto* request = new RentalRequest();
-            
+
             request->requestId = tokens[0];
             request->renterUsername = tokens[1];
             request->motorbikeLicensePlate = tokens[2];
             request->requestedStart = DateUtil::parseDate(tokens[3]);
             request->requestedEnd = DateUtil::parseDate(tokens[4]);
             request->estimatedCost = std::stod(tokens[5]);
-            
-            // Convert string to status enum
-            if (tokens[6] == "PENDING") {
-                request->status = RequestStatus::PENDING;
-            } else if (tokens[6] == "APPROVED") {
-                request->status = RequestStatus::APPROVED;
-            } else if (tokens[6] == "REJECTED") {
-                request->status = RequestStatus::REJECTED;
-            }
-            
+            request->status = stringToStatus(tokens[6]);  // ← Using helper method now
             request->requestDate = DateUtil::parseDate(tokens[7]);
-            
+
             return request;
         } catch (const std::exception& e) {
             std::cerr << "Error parsing rental request data: " << e.what() << std::endl;
@@ -176,7 +152,7 @@ namespace EMotoRental
 
     // ============================================ HELPER METHODS =====================================================
 
-    std::string RentalRequest::generateRequestId() const {
+    std::string RentalRequest::generateRequestId() {
         // Generate unique ID based on timestamp and renter
         const auto timestamp = DateUtil::getTimestamp();
         return "REQ" + std::to_string(timestamp);
