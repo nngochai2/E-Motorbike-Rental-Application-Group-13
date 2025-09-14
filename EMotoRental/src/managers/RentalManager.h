@@ -20,15 +20,16 @@ namespace EMotoRental
     class AuthManager;
 
     // Structure for rental request data
-    struct RentalRequestData {
+    struct RentalRequestData
+    {
         std::string renterUsername;
-        std::string motorbikeId;
+        std::string motorbikeLicensePlate;
         DateUtil::TimePoint startDate;
         DateUtil::TimePoint endDate;
 
         RentalRequestData(const std::string& renter, const std::string& motorbikeId,
-                         const DateUtil::TimePoint& start, const DateUtil::TimePoint& end)
-            : renterUsername(renter), motorbikeId(motorbikeId), startDate(start), endDate(end) {}
+                          const DateUtil::TimePoint& start, const DateUtil::TimePoint& end)
+            : renterUsername(renter), motorbikeLicensePlate(motorbikeId), startDate(start), endDate(end) {}
     };
 
     class RentalManager
@@ -39,12 +40,7 @@ namespace EMotoRental
         std::vector<Rating*> ratings;
 
         // Helper methods
-        void cleanUpMemory();
-
-        std::string formatRentalAsCSV(const Rental* rental) const;
-        std::string formatRatingAsCSV(const Rating* rating) const;
-        std::vector<Rental*> parseRentalsFromCSV(const std::string& content) const;
-        std::vector<Rating*> parseRatingsFromCSV(const std::string& content) const;
+        void cleanupMemory();
 
     public:
         // Constructor
@@ -54,32 +50,32 @@ namespace EMotoRental
         ~RentalManager();
 
         // Rental request management
-        bool createRentalRequest(const RentalRequestData& requestData, MotorbikeManager* motorbikeManager,
-                               AuthManager* authManager);
+        bool createRentalRequest(const RentalRequestData& requestData, const MotorbikeManager* motorbikeManager,
+                                 const AuthManager* authManager);
         bool approveRequest(const std::string& requestId,
-                          MotorbikeManager* motorbikeManager,
-                          AuthManager* authManager);
-        bool rejectRequest(const std::string& requestId);
+                            MotorbikeManager* motorbikeManager,
+                            const AuthManager* authManager);
+        void rejectRequest(const std::string& requestId);
 
         // Rental lifecycle management
         void completeRental(const std::string& rentalId);
         bool canCreateRental(const std::string& renterUsername,
-                                   const std::string& motorbikeId,
-                                   const DateUtil::TimePoint& startDate,
-                                   const DateUtil::TimePoint& endDate) const;
+                             const std::string& motorbikeLicensePlate,
+                             const DateUtil::TimePoint& startDate,
+                             const DateUtil::TimePoint& endDate) const;
 
         // Rating system
         bool createRating(const std::string& reviewerUsername,
-                         const std::string& revieweeId,
-                         int stars,
-                         const std::string& comment,
-                         const std::string& rentalId,
-                         RatingType type,
-                         MotorbikeManager* motorbikeManager,
-                         AuthManager* authManager);
+                          const std::string& revieweeId,
+                          int stars,
+                          const std::string& comment,
+                          const std::string& rentalId,
+                          RatingType type,
+                          const MotorbikeManager* motorbikeManager,
+                          const AuthManager* authManager);
 
         // Query methods
-        std::vector<RentalRequest*> getRequestsForMotorbike(const std::string& motorbikeId) const;
+        std::vector<RentalRequest*> getRequestsForMotorbike(const std::string& motorbikeLicensePlate) const;
         std::vector<RentalRequest*> getRequestsFromRenter(const std::string& renterUsername) const;
         std::vector<Rental*> getActiveRentalsForMember(const std::string& username) const;
         std::vector<Rental*> getRentalHistory(const std::string& username) const;
@@ -105,7 +101,7 @@ namespace EMotoRental
 
         // Display methods
         void displayRequestsForOwner(const std::string& ownerUsername,
-                                   MotorbikeManager* motorbikeManager) const;
+                                     const MotorbikeManager* motorbikeManager) const;
         void displayRentalHistory(const std::string& username) const;
         void displayRatingsForEntity(const std::string& entityId, RatingType type) const;
     };
