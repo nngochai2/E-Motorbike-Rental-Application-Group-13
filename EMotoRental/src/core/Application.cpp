@@ -55,7 +55,8 @@ namespace EMotoRental
                 handleUserTypeSelection();
                 // The key: isRunning can be changed by exitApplication()
                 // The while condition will be checked on next iteration
-            } catch (const std::exception& e) {
+            }
+            catch (const std::exception& e) {
                 InputHelper::displayError("An unexpected error occurred: " + std::string(e.what()));
                 InputHelper::displayMessage("Returning to main menu...");
             }
@@ -154,7 +155,8 @@ namespace EMotoRental
         std::string username, password, fullName, email, phone;
 
         if (ConsoleView::getRegistrationData(username, password, fullName, email, phone)) {
-            if (AuthManager* authManager = dataManager->getAuthManager(); authManager->registerMember(username, password, fullName, email, phone)) {
+            if (AuthManager* authManager = dataManager->getAuthManager(); authManager->registerMember(
+                username, password, fullName, email, phone)) {
                 // Efficiently save the new member to an individual file
                 if (const Member* newMember = authManager->findMemberByUsername(username)) {
                     DataManager::saveMember(newMember);
@@ -162,7 +164,8 @@ namespace EMotoRental
 
                 InputHelper::displaySuccess("Registration successful! You can now login with your credentials.");
                 InputHelper::displayMessage("You have been awarded 20 credit points and a default rating of 3.0");
-            } else {
+            }
+            else {
                 InputHelper::displayError("Registration failed! Please try again with different details.");
             }
         }
@@ -231,7 +234,7 @@ namespace EMotoRental
                 handleMotorbikeSearch();
                 break;
             case 8:
-                handleRentalHistory();
+                handleRentalMenu();
                 break;
             case 0:
                 handleLogout();
@@ -289,7 +292,7 @@ namespace EMotoRental
             return;
         }
 
-        const auto listedMotorbikes = dataManager->getMotorbikeManager()->getAllListedMotorbikes();
+        auto listedMotorbikes = dataManager->getMotorbikeManager()->getAllListedMotorbikes();
 
         if (listedMotorbikes.empty()) {
             InputHelper::displayMessage("No motorbikes currently available for rent.");
@@ -330,18 +333,18 @@ namespace EMotoRental
 
         std::string selectedCity;
         switch (choice) {
-            case 1:
-                selectedCity = "HCMC";
-                break;
-            case 2:
-                selectedCity = "Hanoi";
-                break;
-            case 0:
-                return;
-            default:
-                InputHelper::displayError("Invalid choice.");
-                InputHelper::waitForEnter();
-                return;
+        case 1:
+            selectedCity = "HCMC";
+            break;
+        case 2:
+            selectedCity = "Hanoi";
+            break;
+        case 0:
+            return;
+        default:
+            InputHelper::displayError("Invalid choice.");
+            InputHelper::waitForEnter();
+            return;
         }
 
         // Get all motorbikes in the selected city
@@ -359,7 +362,8 @@ namespace EMotoRental
 
         if (cityMotorbikes.empty()) {
             InputHelper::displayMessage("No motorbikes available in " + selectedCity + ".");
-        } else {
+        }
+        else {
             std::cout << "Found " << cityMotorbikes.size() << " motorbike(s) in " << selectedCity << ":" << std::endl;
             std::cout << std::endl;
 
@@ -375,14 +379,13 @@ namespace EMotoRental
         InputHelper::waitForEnter();
     }
 
-
-
-
     // ========================================= MEMBER FEATURE HANDLERS ===============================================
 
-    void Application::handleMemberDashboard() const {
+    void Application::handleMemberDashboard() {
         if (const auto member = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser())) {
-            ConsoleView::displayMemberDashboard(member);
+            ConsoleView::displayMemberDashboard(member,
+                                                dataManager->getRentalManager(),
+                                                dataManager->getMotorbikeManager());
             InputHelper::waitForEnter();
         }
     }
@@ -398,7 +401,8 @@ namespace EMotoRental
                 // Update only this member's file
                 DataManager::updateMember(member);
                 InputHelper::displaySuccess("Profile updated successfully!");
-            } else {
+            }
+            else {
                 InputHelper::displayError("Profile update failed! Please check your input format.");
             }
         }
@@ -416,11 +420,13 @@ namespace EMotoRental
             // Validate new password using AuthManager
             if (!AuthManager::validatePasswordStrength(newPass)) {
                 InputHelper::displayError("New password does not meet strength requirements!");
-            } else if (member->changePassword(oldPass, newPass)) {
+            }
+            else if (member->changePassword(oldPass, newPass)) {
                 // Update this member's file only
                 DataManager::updateMember(member);
                 InputHelper::displaySuccess("Password updated successfully!");
-            } else {
+            }
+            else {
                 InputHelper::displayError("Password update failed! Please check your current password.");
             }
         }
@@ -443,7 +449,8 @@ namespace EMotoRental
                 DataManager::updateMember(member);
                 InputHelper::displaySuccess("Successfully topped up " + std::to_string(amount) + " credit points!");
                 InputHelper::displayMessage("New balance: " + std::to_string(member->getCreditPoints()) + " CP");
-            } else {
+            }
+            else {
                 InputHelper::displayError("Top-up failed! Please check your password and amount.");
             }
         }
@@ -474,7 +481,7 @@ namespace EMotoRental
             std::string model = InputHelper::getStringInput("Enter model: ");
             std::string color = InputHelper::getStringInput("Enter color: ");
 
-            int engineSize =InputHelper::getIntInput("Enter engine size (cc): ");
+            int engineSize = InputHelper::getIntInput("Enter engine size (cc): ");
             // Engine size validation
             if (engineSize <= 0) {
                 InputHelper::displayError("Engine size must be greater than 0.");
@@ -498,7 +505,7 @@ namespace EMotoRental
 
             // Create registration data
             const MotorbikeRegistrationData regData(brand, model, color, engineSize, yearMade, licensePlate, city,
-                                        currentMember->getUsername());
+                                                    currentMember->getUsername());
 
             // Register and save through DataManager
             if (dataManager->registerAndSaveMotorbike(regData)) {
@@ -509,14 +516,16 @@ namespace EMotoRental
                 dataManager->updateMember(currentMember);
 
                 // Display registered motorbike details
-                if (const Motorbike* newBike = dataManager->getMotorbikeManager()->getMotorbikeByLicensePlate(licensePlate)) {
+                if (const Motorbike* newBike = dataManager->getMotorbikeManager()->getMotorbikeByLicensePlate(
+                    licensePlate)) {
                     newBike->displayDetails();
                 }
-            } else {
+            }
+            else {
                 InputHelper::displayError("Failed to register motorbike. Please try again.");
             }
-
-        } catch ([[maybe_unused]] const std::exception& e) {
+        }
+        catch ([[maybe_unused]] const std::exception& e) {
             InputHelper::displayError("Failed to register motorbike. Please try again.");
         }
 
@@ -532,7 +541,8 @@ namespace EMotoRental
         const auto currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
 
         // Check if member owns a motorbike
-        const Motorbike* ownedBike = dataManager->getMotorbikeManager()->getMotorbikeByOwner(currentMember->getUsername());
+        const Motorbike* ownedBike = dataManager->getMotorbikeManager()->getMotorbikeByOwner(
+            currentMember->getUsername());
         if (!ownedBike) {
             InputHelper::displayError("You don't own a motorbike. Please register one first.");
             InputHelper::waitForEnter();
@@ -550,7 +560,8 @@ namespace EMotoRental
             if (InputHelper::confirmAction("Do you want to update the listing?")) {
                 // Unlist first, then re-list with new data
                 dataManager->unlistAndSaveMotorbike(ownedBike->getLicensePlate());
-            } else {
+            }
+            else {
                 InputHelper::waitForEnter();
                 return;
             }
@@ -582,11 +593,12 @@ namespace EMotoRental
             if (dataManager->listAndSaveMotorbike(ownedBike->getLicensePlate(), listingData)) {
                 InputHelper::displaySuccess("Motorbike listed for rent successfully!");
                 ownedBike->displayPublicInfo();
-            } else {
+            }
+            else {
                 InputHelper::displayError("Failed to list motorbike. Please try again.");
             }
-
-        } catch (const std::exception& e) {
+        }
+        catch (const std::exception& e) {
             InputHelper::displayError("Listing failed: " + std::string(e.what()));
         }
 
@@ -633,18 +645,20 @@ namespace EMotoRental
                     Member* currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
                     if (results[i]->meetsRequirement(*currentMember)) {
                         std::cout << "✓ You meet the requirements for this motorbike." << std::endl;
-                    } else {
+                    }
+                    else {
                         std::cout << "✗ You don't meet the requirements for this motorbike." << std::endl;
                     }
-                } else {
+                }
+                else {
                     // Guest see limited info only
                     displayGuestMotorbikeInfo(results[i]);
                 }
             }
 
             std::cout << "====================================" << std::endl;
-
-        } catch (const std::exception& e) {
+        }
+        catch (const std::exception& e) {
             InputHelper::displayError("Search failed: " + std::string(e.what()));
         }
 
@@ -674,7 +688,8 @@ namespace EMotoRental
         }
 
         const auto currentMember = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
-        const Motorbike* ownedBike = dataManager->getMotorbikeManager()->getMotorbikeByOwner(currentMember->getUsername());
+        const Motorbike* ownedBike = dataManager->getMotorbikeManager()->getMotorbikeByOwner(
+            currentMember->getUsername());
 
         ConsoleView::displayHeader("Motorbike Management");
 
@@ -713,7 +728,8 @@ namespace EMotoRental
                 if (InputHelper::confirmAction("Are you sure you want to unlist your motorbike?")) {
                     if (dataManager->unlistAndSaveMotorbike(ownedBike->getLicensePlate())) {
                         InputHelper::displaySuccess("Motorbike unlisted successfully!");
-                    } else {
+                    }
+                    else {
                         InputHelper::displayError("Failed to unlist motorbike.");
                     }
                     InputHelper::waitForEnter();
@@ -730,17 +746,285 @@ namespace EMotoRental
 
     void Application::handleRentalHistory() const {
         if (const auto member = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser())) {
-            if (const auto history = member->getRentalHistory(); history.empty()) {
+            // Use RentalManager
+            if (const auto rentalHistory = dataManager->getRentalManager()->getRentalHistory(member->getUsername());
+                rentalHistory.empty()) {
                 InputHelper::displayMessage("You have no rental history yet.");
-            } else {
-                ConsoleView::displayHeader("Rental History");
-                std::cout << "You have " << history.size() << " rental records:" << std::endl;
-                for (size_t i = 0; i < history.size(); ++i) {
-                    std::cout << (i + 1) << ". Rental ID: " << history[i] << std::endl;
-                }
-                InputHelper::displayMessage("Detailed rental history display coming soon!");
+            }
+            else {
+                dataManager->getRentalManager()->displayRentalHistory(member->getUsername());
             }
         }
+        InputHelper::waitForEnter();
+    }
+
+    // ========================================= RENTAL FEATURE HANDLERS ===============================================
+
+    void Application::handleRentalMenu() {
+        bool rentalMenuActive = true;
+        while (rentalMenuActive) {
+            ConsoleView::displayRentalMenu();
+
+            switch (InputHelper::getMenuChoice(0, 5)) {
+            case 1:
+                handleCreateRentalRequest();
+                break;
+            case 2:
+                handleViewRentalRequests();
+                break;
+            case 3:
+                handleApproveRentalRequest();
+                break;
+            case 4:
+                handleRateRental();
+                break;
+            case 0:
+                rentalMenuActive = false;
+                break;
+            default:
+                InputHelper::displayError("Invalid choice! Please select 0-5.");
+                break;
+            }
+        }
+    }
+
+    void Application::handleCreateRentalRequest() {
+        if (!isUserLoggedIn() || !isMember()) {
+            InputHelper::displayError("Please log in as a member.");
+            return;
+        }
+
+        Member* currentMember = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        ConsoleView::displayHeader("Create Rental Request");
+
+        try {
+            // Get search criteria
+            std::string city;
+            while (true) {
+                city = InputHelper::getStringInput("Enter city (HCMC/Hanoi): ");
+                if (city == "HCMC" || city == "Hanoi") {
+                    break;
+                }
+                InputHelper::displayError("City must be either 'HCMC' or 'Hanoi'.");
+            }
+
+            DateUtil::TimePoint startDate = InputHelper::getDateInput("Enter rental start date: ");
+            DateUtil::TimePoint endDate = InputHelper::getDateInput("Enter rental end date: ");
+
+            if (startDate >= endDate) {
+                InputHelper::displayError("End date must be after start date.");
+                return;
+            }
+
+            // Search motorbikes using existing logic
+            auto results = dataManager->getMotorbikeManager()->searchMotorbikes(city, startDate, endDate);
+
+            if (results.empty()) {
+                InputHelper::displayMessage("No motorbikes available for your criteria.");
+                InputHelper::waitForEnter();
+                return;
+            }
+
+            // Display results using existing display logic (similar to handleMotorbikeSearch)
+            std::cout << "\n========== AVAILABLE MOTORBIKES ==========" << std::endl;
+            std::cout << "Found " << results.size() << " available motorbikes:" << std::endl;
+
+            for (size_t i = 0; i < results.size(); i++) {
+                std::cout << "\n--- Option #" << (i + 1) << " ---" << std::endl;
+                results[i]->displayPublicInfo();
+
+                // Show cost calculation
+                int days = DateUtil::daysBetween(startDate, endDate);
+                double cost = results[i]->calculateCost(days);
+                std::cout << "Total Cost for " << days << " days: " << std::fixed
+                    << std::setprecision(2) << cost << " CP" << std::endl;
+            }
+            std::cout << "===========================================" << std::endl;
+
+            // Let user select
+            std::string selectedPlate = InputHelper::getStringInput("Enter license plate to rent: ");
+
+            // Validate selection
+            Motorbike* selectedBike = nullptr;
+            for (Motorbike* bike : results) {
+                if (bike->getLicensePlate() == selectedPlate) {
+                    selectedBike = bike;
+                    break;
+                }
+            }
+
+            if (!selectedBike) {
+                InputHelper::displayError("Invalid license plate.");
+                return;
+            }
+
+            // Create and submit request
+            RentalRequestData requestData(currentMember->getUsername(), selectedPlate, startDate, endDate);
+
+            if (dataManager->getRentalManager()->createRentalRequest(requestData,
+                                                                     dataManager->getMotorbikeManager(),
+                                                                     dataManager->getAuthManager())) {
+                InputHelper::displaySuccess("Rental request submitted successfully!");
+                InputHelper::displayMessage("The motorbike owner will review your request.");
+            }
+            else {
+                InputHelper::displayError("Failed to create rental request.");
+            }
+        }
+        catch (const std::exception& e) {
+            InputHelper::displayError("Request failed: " + std::string(e.what()));
+        }
+
+        InputHelper::waitForEnter();
+    }
+
+    void Application::handleViewRentalRequests() {
+        if (!isUserLoggedIn() || !isMember()) {
+            InputHelper::displayError("Please log in as a member.");
+            return;
+        }
+
+        Member* currentMember = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+
+        // Show requests BY this member
+        auto myRequests = dataManager->getRentalManager()->getRequestsFromRenter(currentMember->getUsername());
+        ConsoleView::displayHeader("Your Rental Requests");
+
+        if (myRequests.empty()) {
+            std::cout << "You have no rental requests." << std::endl;
+        }
+        else {
+            for (size_t i = 0; i < myRequests.size(); ++i) {
+                std::cout << "\n--- Request #" << (i + 1) << " ---" << std::endl;
+                myRequests[i]->displayRequest();
+            }
+        }
+
+        // Show requests FOR this member's motorbike
+        Motorbike* ownedBike = dataManager->getMotorbikeManager()->getMotorbikeByOwner(currentMember->getUsername());
+        if (ownedBike) {
+            std::cout << "\n" << std::endl;
+            dataManager->getRentalManager()->displayRequestsForOwner(currentMember->getUsername(),
+                                                                     dataManager->getMotorbikeManager());
+        }
+
+        InputHelper::waitForEnter();
+    }
+
+    void Application::handleApproveRentalRequest() {
+        if (!isUserLoggedIn() || !isMember()) {
+            InputHelper::displayError("Please log in as a member.");
+            return;
+        }
+
+        Member* currentMember = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+
+        // Check if member owns a motorbike
+        Motorbike* ownedBike = dataManager->getMotorbikeManager()->getMotorbikeByOwner(currentMember->getUsername());
+        if (!ownedBike) {
+            InputHelper::displayError("You don't own a motorbike.");
+            return;
+        }
+
+        ConsoleView::displayHeader("Approve Rental Requests");
+
+        // Show pending requests using RentalManager's display method
+        dataManager->getRentalManager()->displayRequestsForOwner(currentMember->getUsername(),
+                                                                 dataManager->getMotorbikeManager());
+
+        std::string requestId = InputHelper::getStringInput("Enter Request ID to approve (or 'cancel'): ");
+
+        if (requestId == "cancel") {
+            return;
+        }
+
+        if (InputHelper::confirmAction("Do you want to approve this request?")) {
+            if (dataManager->getRentalManager()->approveRequest(requestId,
+                                                                dataManager->getMotorbikeManager(),
+                                                                dataManager->getAuthManager())) {
+                InputHelper::displaySuccess("Request approved successfully!");
+            }
+            else {
+                InputHelper::displayError("Failed to approve request.");
+            }
+        }
+
+        InputHelper::waitForEnter();
+    }
+
+    void Application::handleRateRental() {
+        if (!isUserLoggedIn() || !isMember()) {
+            InputHelper::displayError("Please log in as a member.");
+            return;
+        }
+
+        Member* currentMember = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        ConsoleView::displayHeader("Rate Rental Experience");
+
+        // Get completed rentals
+        auto rentalHistory = dataManager->getRentalManager()->getRentalHistory(currentMember->getUsername());
+
+        std::vector<Rental*> completedRentals;
+        for (Rental* rental : rentalHistory) {
+            if (rental->getStatus() == RentalStatus::COMPLETED) {
+                completedRentals.push_back(rental);
+            }
+        }
+
+        if (completedRentals.empty()) {
+            InputHelper::displayMessage("No completed rentals to rate.");
+            InputHelper::waitForEnter();
+            return;
+        }
+
+        std::cout << "Completed rentals available for rating:" << std::endl;
+        for (size_t i = 0; i < completedRentals.size(); ++i) {
+            std::cout << "\n--- Rental #" << (i + 1) << " ---" << std::endl;
+            completedRentals[i]->displayInfo();
+        }
+
+        std::string rentalId = InputHelper::getStringInput("Enter Rental ID to rate: ");
+
+        int stars;
+        std::string comment;
+        if (ConsoleView::getRatingData(stars, comment)) {
+            Rental* rental = dataManager->getRentalManager()->getRentalById(rentalId);
+            if (!rental) {
+                InputHelper::displayError("Invalid rental ID.");
+                return;
+            }
+
+            // Determine what to rate based on user role
+            bool isRenter = (rental->getRenterUsername() == currentMember->getUsername());
+
+            if (isRenter) {
+                // Rate the motorbike
+                if (dataManager->getRentalManager()->createRating(currentMember->getUsername(),
+                                                                  rental->getMotorbikeLicensePlate(), stars, comment, rentalId,
+                                                                  RatingType::MOTORBIKE_RATING,
+                                                                  dataManager->getMotorbikeManager(),
+                                                                  dataManager->getAuthManager())) {
+                    InputHelper::displaySuccess("Motorbike rating submitted!");
+                }
+                else {
+                    InputHelper::displayError("Failed to submit rating.");
+                }
+            }
+            else {
+                // Rate the renter
+                if (dataManager->getRentalManager()->createRating(currentMember->getUsername(),
+                                                                  rental->getRenterUsername(), stars, comment, rentalId,
+                                                                  RatingType::RENTER_RATING,
+                                                                  dataManager->getMotorbikeManager(),
+                                                                  dataManager->getAuthManager())) {
+                    InputHelper::displaySuccess("Renter rating submitted!");
+                }
+                else {
+                    InputHelper::displayError("Failed to submit rating.");
+                }
+            }
+        }
+
         InputHelper::waitForEnter();
     }
 
@@ -774,7 +1058,8 @@ namespace EMotoRental
         if (const Member* member = dataManager->getAuthManager()->findMemberByUsername(username)) {
             ConsoleView::displayHeader("Member Details: " + username);
             member->displayInfo();
-        } else {
+        }
+        else {
             InputHelper::displayError("Member not found: " + username);
         }
 
@@ -807,12 +1092,13 @@ namespace EMotoRental
             averageRating /= members.size();
         }
 
-        std::cout << "Total Credit Points in System: " << std::fixed << std::setprecision(1) << totalCredits << std::endl;
+        std::cout << "Total Credit Points in System: " << std::fixed << std::setprecision(1) << totalCredits <<
+            std::endl;
         std::cout << "Average Member Rating: " << std::fixed << std::setprecision(2) << averageRating << std::endl;
         std::cout << "Verified Members: " << verifiedMembers << " (" <<
-                     (members.empty() ? 0 : (verifiedMembers * 100 / members.size())) << "%)" << std::endl;
+            (members.empty() ? 0 : (verifiedMembers * 100 / members.size())) << "%)" << std::endl;
         std::cout << "Members with Valid License: " << membersWithLicense << " (" <<
-                     (members.empty() ? 0 : (membersWithLicense * 100 / members.size())) << "%)" << std::endl;
+            (members.empty() ? 0 : (membersWithLicense * 100 / members.size())) << "%)" << std::endl;
 
         InputHelper::displayMessage("More detailed statistics coming soon!");
         InputHelper::waitForEnter();
@@ -828,39 +1114,41 @@ namespace EMotoRental
         std::cout << "0. Return to Admin Menu" << std::endl;
 
         switch (InputHelper::getMenuChoice(0, 4)) {
-            case 1:
-                if (confirmCriticalAction("save all data")) {
-                    if (dataManager->saveAllData()) {
-                        InputHelper::displaySuccess("All data saved successfully!");
-                    } else {
-                        InputHelper::displayError("Some data could not be saved!");
-                    }
+        case 1:
+            if (confirmCriticalAction("save all data")) {
+                if (dataManager->saveAllData()) {
+                    InputHelper::displaySuccess("All data saved successfully!");
                 }
-                break;
-            case 2:
-                if (DataManager::validateDataConsistency()) {
-                    InputHelper::displaySuccess("Data consistency validation passed!");
-                } else {
-                    InputHelper::displayError("Data consistency issues found!");
+                else {
+                    InputHelper::displayError("Some data could not be saved!");
                 }
-                break;
-            case 3:
-                if (confirmCriticalAction("cleanup orphaned files")) {
-                    DataManager::cleanupOrphanedFiles();
-                    InputHelper::displaySuccess("Orphaned files cleanup completed!");
-                }
-                break;
-            case 4: {
-                const auto memberFiles = DataManager::listMembers();
-                const auto adminFiles = DataManager::listAdmins();
-                std::cout << "Member files: " << memberFiles.size() << std::endl;
-                std::cout << "Admin files: " << adminFiles.size() << std::endl;
-                InputHelper::displayMessage("Data files are stored in individual files for efficient updates.");
-                break;
             }
-            case 0:
-                return;
-            default: ;
+            break;
+        case 2:
+            if (DataManager::validateDataConsistency()) {
+                InputHelper::displaySuccess("Data consistency validation passed!");
+            }
+            else {
+                InputHelper::displayError("Data consistency issues found!");
+            }
+            break;
+        case 3:
+            if (confirmCriticalAction("cleanup orphaned files")) {
+                DataManager::cleanupOrphanedFiles();
+                InputHelper::displaySuccess("Orphaned files cleanup completed!");
+            }
+            break;
+        case 4: {
+            const auto memberFiles = DataManager::listMembers();
+            const auto adminFiles = DataManager::listAdmins();
+            std::cout << "Member files: " << memberFiles.size() << std::endl;
+            std::cout << "Admin files: " << adminFiles.size() << std::endl;
+            InputHelper::displayMessage("Data files are stored in individual files for efficient updates.");
+            break;
+        }
+        case 0:
+            return;
+        default: ;
         }
 
         InputHelper::waitForEnter();

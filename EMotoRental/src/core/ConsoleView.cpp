@@ -160,8 +160,7 @@ namespace EMotoRental
         std::cout << "1. Search & Request Rental\n";
         std::cout << "2. View My Rental Requests\n";
         std::cout << "3. Approve Rental Requests\n";
-        std::cout << "4. Complete Rental\n";
-        std::cout << "5. Rate Rental Experience\n";
+        std::cout << "4. Rate Rental Experience\n";
         std::cout << "0. Back to Main Menu\n";
     }
 
