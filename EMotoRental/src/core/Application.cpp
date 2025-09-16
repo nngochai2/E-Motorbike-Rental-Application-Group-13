@@ -289,7 +289,7 @@ namespace EMotoRental
             return;
         }
 
-        auto listedMotorbikes = dataManager->getMotorbikeManager()->getAllListedMotorbikes();
+        const auto listedMotorbikes = dataManager->getMotorbikeManager()->getAllListedMotorbikes();
 
         if (listedMotorbikes.empty()) {
             InputHelper::displayMessage("No motorbikes currently available for rent.");
