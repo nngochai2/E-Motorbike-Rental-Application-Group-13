@@ -4,6 +4,8 @@
 
 #pragma once
 #include "AuthManager.h"
+#include "MotorbikeManager.h"
+#include "RentalManager.h"
 #include <string>
 #include <vector>
 
@@ -13,8 +15,8 @@ namespace EMotoRental
     {
     private:
         AuthManager* authManager;
-        // MotorbikeManager* motorbikeManager;  // TODO: Add when implemented
-        // RentalManager* rentalManager; // TODO: Add when implemented
+        MotorbikeManager* motorbikeManager;
+        RentalManager* rentalManager;
 
         // File paths
         static const std::string DATA_DIR;
@@ -22,6 +24,9 @@ namespace EMotoRental
         static const std::string ADMINS_DIR;
         static const std::string MOTORBIKES_DIR;
         static const std::string RENTALS_DIR;
+        static const std::string REQUESTS_DIR;
+        static const std::string RENTALS_ACTIVE_DIR;
+        static const std::string RATINGS_DIR;
 
     public:
         DataManager();
@@ -29,13 +34,13 @@ namespace EMotoRental
 
         // Manager access
         AuthManager* getAuthManager() const;
-        // MotorbikeManager* getMotorbikeManager() const;  // TODO
-        // RentalManager* getRentalManager() const; // TODO
+        MotorbikeManager* getMotorbikeManager() const;
+        RentalManager* getRentalManager() const;
 
         // Data lifecycle
         static bool initializeSystem();
         bool loadAllData() const;
-        bool saveAllData();
+        bool saveAllData() const;
         void shutdown();
 
         // Individual entity operations (efficient updates)
@@ -47,6 +52,11 @@ namespace EMotoRental
         static bool saveAdmin(const Admin* admin);
         static bool loadAdmin(const std::string& username, Admin*& admin);
 
+        static bool saveMotorbike(const Motorbike* motorbike);
+        static bool loadMotorbike(const std::string& licensePlate, Motorbike*& motorbike);
+        static bool deleteMotorbike(const std::string& licensePlate);
+        static bool updateMotorbike(const Motorbike* motorbike);
+
         // Data integrity
         static bool validateDataConsistency();
         static void cleanupOrphanedFiles();
@@ -55,11 +65,35 @@ namespace EMotoRental
         static bool createDirectoryStructure();
         static std::vector<std::string> listMembers();
         static std::vector<std::string> listAdmins();
+        static std::vector<std::string> listMotorbikes();
+
+        static std::vector<std::string> listRentalRequests();
+        static std::vector<std::string> listRentals();
+        static std::vector<std::string> listRatings();
+
+        // Convenience methods
+        bool registerAndSaveMotorbike(const MotorbikeRegistrationData& registrationData);
+        bool listAndSaveMotorbike(const std::string& licensePlate, const MotorbikeListingData& listingData);
+        bool unlistAndSaveMotorbike(const std::string& licensePlate);
 
     private:
-        // Helper methods
+        // Individual file operations for rental entities
+        static bool saveRentalRequest(const RentalRequest* request);
+        static bool loadRentalRequest(const std::string& requestId, RentalRequest*& request);
+        static bool saveRental(const Rental* rental);
+        static bool loadRental(const std::string& rentalId, Rental*& rental);
+        static bool saveRating(const Rating* rating);
+        static bool loadRating(const std::string& ratingId, Rating*& rating);
+
+        // File path helper methods
         static std::string getMemberFilePath(const std::string& username);
         static std::string getAdminFilePath(const std::string& username);
+        static std::string getMotorbikeFilePath(const std::string& licensePlate);
+
+        static std::string getRequestFilePath(const std::string& requestId);
+        static std::string getRentalFilePath(const std::string& rentalId);
+        static std::string getRatingFilePath(const std::string& ratingId);
+
         static bool fileExists(const std::string& filename);
         static void logDataOperation(const std::string& operation, const std::string& details);
     };

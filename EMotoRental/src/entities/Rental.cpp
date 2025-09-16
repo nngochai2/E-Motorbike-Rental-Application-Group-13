@@ -5,93 +5,143 @@
 #include "Rental.h"
 #include <iostream>
 #include <sstream>
+
+#include "RentalRequest.h"
 #include "../utils/FileHandler.h"
 #include "../utils/IdGenerator.h"
 
 namespace EMotoRental
 {
-    Rental::Rental(const std::string& requestId, const std::string& renterUsername, 
-                 const std::string& motorbikeId, const DateUtil::TimePoint& startDate,
-                 const DateUtil::TimePoint& endDate, double totalCost)
-        : renterUsername(renterUsername), motorbikeId(motorbikeId),
-          startDate(startDate), endDate(endDate), totalCost(totalCost),
-          status(RentalStatus::ACTIVE)
-    {
-        // Generate a UUID for the rental with a prefix, different from requestId
-        rentalId = IdGenerator::generateId("RNT");
+    Rental::Rental() : totalCost(0.0), status(RentalStatus::ACTIVE) {
+        rentalId = generateRentalId();
     }
-    
-    std::string Rental::getRentalId() const
-    {
-        return rentalId;
+
+    Rental::Rental(const RentalRequest& request, const std::string& ownerUsername)
+        : renterUsername(request.getRenterUsername()),
+          ownerUsername(ownerUsername),
+          motorbikeLicensPlate(request.getMotorbikeLicensePlate()),
+          startDate(request.getStartDate()),
+          endDate(request.getEndDate()),
+          totalCost(request.getEstimatedCost()),
+          status(RentalStatus::ACTIVE) {
+        rentalId = generateRentalId();
     }
-    
-    RentalStatus Rental::getStatus() const
-    {
-        return status;
-    }
-    
-    void Rental::complete()
-    {
+
+    // ========================================== CORE FUNCTIONALITIES =================================================
+
+    void Rental::complete() {
         status = RentalStatus::COMPLETED;
-        std::cout << "Rental " << rentalId << " has been marked as completed." << std::endl;
+        std::cout << "Rental " << rentalId << " has been completed." << std::endl;
     }
-    
-    void Rental::displayDetails() const
-    {
-        std::cout << "========== RENTAL DETAILS ==========" << std::endl;
+
+    bool Rental::isActive() const {
+        return status == RentalStatus::ACTIVE;
+    }
+
+    bool Rental::isOverdue() const {
+        return isActive() && DateUtil::getCurrentTime() > endDate;
+    }
+
+    // ================================================ GETTERS ========================================================
+
+    std::string Rental::getRentalId() const { return rentalId; }
+    RentalStatus Rental::getStatus() const { return status; }
+    std::string Rental::getRenterUsername() const { return renterUsername; }
+    std::string Rental::getOwnerUsername() const { return ownerUsername; }
+    std::string Rental::getMotorbikeLicensePlate() const { return motorbikeLicensPlate; }
+    DateUtil::TimePoint Rental::getStartDate() const { return startDate; }
+    DateUtil::TimePoint Rental::getEndDate() const { return endDate; }
+    double Rental::getTotalCost() const { return totalCost; }
+
+    // ============================================= DISPLAY METHODS ===================================================
+
+    void Rental::displayInfo() const {
         std::cout << "Rental ID: " << rentalId << std::endl;
         std::cout << "Renter: " << renterUsername << std::endl;
-        std::cout << "Motorbike ID: " << motorbikeId << std::endl;
-        std::cout << "Start Date: " << DateUtil::formatDate(startDate) << std::endl;
-        std::cout << "End Date: " << DateUtil::formatDate(endDate) << std::endl;
-        std::cout << "Total Cost: " << totalCost << " CP" << std::endl;
-        std::cout << "Status: " << (status == RentalStatus::ACTIVE ? "ACTIVE" : "COMPLETED") << std::endl;
-        std::cout << "===================================" << std::endl;
+        std::cout << "Owner: " << ownerUsername << std::endl;
+        std::cout << "Motorbike: " << motorbikeLicensPlate << std::endl;
+        std::cout << "Period: " << DateUtil::formatDate(startDate)
+                  << " to " << DateUtil::formatDate(endDate) << std::endl;
+        std::cout << "Total Cost: " << std::fixed << std::setprecision(2) << totalCost << " CP" << std::endl;
+        std::cout << "Status: " << statusToString() << std::endl;
+
+        if (isOverdue()) {
+            std::cout << "OVERDUE - Please return the motorbike!" << std::endl;
+        }
     }
-    
-    std::string Rental::toCSVString() const
-    {
+
+    // ============================================ DATA PERSISTENCE ===================================================
+
+    std::string Rental::toCSVString() const {
         std::ostringstream oss;
         oss << rentalId << ","
             << renterUsername << ","
-            << motorbikeId << ","
+            << ownerUsername << ","
+            << motorbikeLicensPlate << ","
             << DateUtil::formatDate(startDate) << ","
             << DateUtil::formatDate(endDate) << ","
-            << totalCost << ","
-            << (status == RentalStatus::ACTIVE ? "ACTIVE" : "COMPLETED");
-            
+            << std::fixed << std::setprecision(2) << totalCost << ","
+            << statusToString();
         return oss.str();
     }
-    
-    Rental* Rental::fromCSVString(const std::string& csvData)
-    {
-        std::vector<std::string> tokens = FileHandler::parseCSVLine(csvData);
-        
-        if (tokens.size() < 7) {
-            std::cerr << "Invalid rental CSV data: not enough fields" << std::endl;
+
+    Rental* Rental::fromCSVString(const std::string& csvData) {
+        std::istringstream iss(csvData);
+        std::string token;
+        std::vector<std::string> tokens;
+
+        // Parse CSV line
+        while (std::getline(iss, token, ',')) {
+            tokens.push_back(token);
+        }
+
+        if (tokens.size() < 8) {
+            std::cerr << "Invalid Rental CSV data: insufficient fields (" << tokens.size() << " < 8)" << std::endl;
             return nullptr;
         }
-        
+
         try {
-            std::string rentalId = tokens[0];
-            std::string renterUsername = tokens[1];
-            std::string motorbikeId = tokens[2];
-            DateUtil::TimePoint startDate = DateUtil::parseDate(tokens[3]);
-            DateUtil::TimePoint endDate = DateUtil::parseDate(tokens[4]);
-            double totalCost = std::stod(tokens[5]);
-            
-            auto* rental = new Rental(rentalId, renterUsername, motorbikeId, startDate, endDate, totalCost);
-            
-            // Set status
-            if (tokens[6] == "COMPLETED") {
-                rental->status = RentalStatus::COMPLETED;
-            }
-            
+            auto* rental = new Rental();
+
+            // Parse each field
+            rental->rentalId = tokens[0];
+            rental->renterUsername = tokens[1];
+            rental->ownerUsername = tokens[2];
+            rental->motorbikeLicensPlate = tokens[3];
+            rental->startDate = DateUtil::parseDate(tokens[4]);
+            rental->endDate = DateUtil::parseDate(tokens[5]);
+            rental->totalCost = std::stod(tokens[6]);
+            rental->status = stringToStatus(tokens[7]);
+
             return rental;
-        } catch (const std::exception& e) {
-            std::cerr << "Error parsing rental data: " << e.what() << std::endl;
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Error parsing Rental CSV data: " << e.what() << std::endl;
             return nullptr;
         }
+    }
+
+    // ============================================ HELPER METHODS =====================================================
+
+    std::string Rental::generateRentalId() {
+        // Generate unique ID based on timestamp
+        const auto timestamp = DateUtil::getTimestamp();
+        return "RNT" + std::to_string(timestamp);
+    }
+
+    std::string Rental::statusToString() const {
+        switch (status) {
+            case RentalStatus::ACTIVE: return "ACTIVE";
+            case RentalStatus::COMPLETED: return "COMPLETED";
+            default: return "UNKNOWN";
+        }
+    }
+
+    RentalStatus Rental::stringToStatus(const std::string& str) {
+        if (str == "ACTIVE") return RentalStatus::ACTIVE;
+        if (str == "COMPLETED") return RentalStatus::COMPLETED;
+
+        std::cerr << "Warning: Unknown RentalStatus string: '" << str << "', defaulting to ACTIVE" << std::endl;
+        return RentalStatus::ACTIVE;
     }
 }

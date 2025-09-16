@@ -76,41 +76,6 @@ namespace EMotoRental
         return !ownedMotorbikeId.empty();
     }
 
-    bool Member::canRentMotorbike(double cost, double requiredRating, int engineSize) const
-    {
-        // Check credit points
-        if (creditPoints < cost)
-        {
-            return false;
-        }
-
-        // Check renter rating
-        if (renterRating < requiredRating)
-        {
-            return false;
-        }
-
-        // Check license for motorbikes > 50cc
-        if (engineSize > 50 && !hasValidLicense)
-        {
-            return false;
-        }
-
-        // Check if already has active rental
-        if (hasActiveRental())
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    bool Member::hasActiveRental() const
-    {
-        // WILL BE IMPLEMENTED AFTER RentalManager IS READY
-        return false; // Return false for now
-    }
-
     // Virtual implementations
     std::string Member::getUserType() const
     {

@@ -26,7 +26,7 @@ namespace EMotoRental {
 	}
 
 	std::string DateUtil::formatDate(const TimePoint& timePoint) {
-		std::tm tm = timePointToTm(timePoint);
+		const std::tm tm = timePointToTm(timePoint);
 		std::ostringstream oss;
 		oss << std::setfill('0') << std::setw(2) << tm.tm_mday << "/" 
 				<< std::setfill('0') << std::setw(2) << (tm.tm_mon + 1) << "/"
@@ -37,6 +37,24 @@ namespace EMotoRental {
 
 	DateUtil::TimePoint DateUtil::getCurrentTime() {
 		return std::chrono::system_clock::now();
+	}
+
+	int64_t DateUtil::getTimestamp() {
+		const auto now = getCurrentTime();
+		return std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+	}
+
+	int DateUtil::getCurrentYear() {
+		const TimePoint currentTime = getCurrentTime();
+		const std::tm currentTm = timePointToTm(currentTime);
+		return currentTm.tm_year + 1900;
+	}
+
+	bool DateUtil::isValidYear(int year, int minYear, int maxYearOffset) {
+		const int currentYear = getCurrentYear();
+		const int maxYear = currentYear + maxYearOffset;
+
+		return year >= minYear && year <= maxYear;
 	}
 
 	int DateUtil::daysBetween(const TimePoint& start, const TimePoint& end) {

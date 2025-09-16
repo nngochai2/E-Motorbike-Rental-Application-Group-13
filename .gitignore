@@ -48,3 +48,4 @@ cmake-build-*/
 # VS Code settings
 .vscode/
 
+.idea

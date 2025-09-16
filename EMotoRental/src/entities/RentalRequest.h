@@ -15,7 +15,7 @@ namespace EMotoRental
     private:
         std::string requestId;
         std::string renterUsername;
-        std::string motorbikeId;
+        std::string motorbikeLicensePlate;
         DateUtil::TimePoint requestedStart;
         DateUtil::TimePoint requestedEnd;
         double estimatedCost;
@@ -24,18 +24,37 @@ namespace EMotoRental
 
     public:
         RentalRequest();
-        RentalRequest(const std::string& renterUsername, const std::string& motorbikeId,
+        RentalRequest(const std::string& renterUsername, const std::string& motorbikeLicensePlate,
                      const DateUtil::TimePoint& startDate, const DateUtil::TimePoint& endDate,
                      double estimatedCost);
 
-        Rental* approve();
+        // Core functionalities
+        void approve();
         void reject();
+
+        // Conflict checking
+        bool hasConflict(const RentalRequest& otherRequest) const;
+
+        // Getters
         std::string getRequestId() const;
         RequestStatus getStatus() const;
-        bool hasConflict(const RentalRequest& other) const;
+        std::string getRenterUsername() const;
+        std::string getMotorbikeLicensePlate() const;
+        DateUtil::TimePoint getStartDate() const;
+        DateUtil::TimePoint getEndDate() const;
+        double getEstimatedCost() const;
+        DateUtil::TimePoint getRequestDate() const;
+
+        // Display
         void displayRequest() const;
-        
+
+        // Data persistence
         std::string toCSVString() const;
         static RentalRequest* fromCSVString(const std::string& csvData);
+
+    private:
+        static std::string generateRequestId();
+        std::string statusToString() const;
+        static RequestStatus stringToStatus(const std::string& str);
     };
 }

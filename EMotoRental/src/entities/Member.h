@@ -6,6 +6,8 @@
 #include "User.h"
 #include <vector>
 
+#include "../managers/RentalManager.h"
+
 namespace EMotoRental
 {
     class Member : public User
@@ -35,10 +37,6 @@ namespace EMotoRental
         std::string getOwnedMotorbikeId() const;
         void setOwnedMotorbikeId(const std::string& id);
         bool hasOwnedMotorbike() const;
-
-        // Rental eligibility
-        bool canRentMotorbike(double cost, double requiredRating, int engineSize) const;
-        bool hasActiveRental() const;
 
         // Virtual function implementations
         std::string getUserType() const override;

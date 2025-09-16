@@ -2,34 +2,45 @@
 #include <chrono>
 #include <string>
 
-namespace EMotoRental {
-	class DateUtil {
-		public:
-			using TimePoint = std::chrono::system_clock::time_point;
+namespace EMotoRental
+{
+    class DateUtil
+    {
+    public:
+        using TimePoint = std::chrono::system_clock::time_point;
 
-			// Parse date from string formate "DD/MM/YYYY"
-			static TimePoint parseDate(const std::string& dateString);
+        // Parse date from string formate "DD/MM/YYYY"
+        static TimePoint parseDate(const std::string& dateString);
 
-			// Format date to string "DD/MM/YYYY"
-			static std::string formatDate(const TimePoint& timePoint);
+        // Format date to string "DD/MM/YYYY"
+        static std::string formatDate(const TimePoint& timePoint);
 
-			// Get current system time
-			static TimePoint getCurrentTime();
+        // Get current system time
+        static TimePoint getCurrentTime();
 
-			// Calculate days between 2 dates
-			static int daysBetween(const TimePoint &start, const TimePoint &end);
-			
-			// Check if date range is valid
-			static bool isValidDateRange(const TimePoint& start, const TimePoint& end);
+        // Get timestamp
+        static int64_t getTimestamp();
 
-			// Add days to a date
-			static TimePoint addDays(const TimePoint& TimePoint, int days);
+        // Get current year
+        static int getCurrentYear();
 
-		private:
-			// Helper function to convert time_point to tm struct
-			static std::tm timePointToTm(const TimePoint& TimePoint);
+        // Validate a year
+        static bool isValidYear(int year, int minYear = 2000, int maxYearOffset = 1);
 
-			// Helper function to convert tm struct to time_point
-			static TimePoint tmToTimePoint(const std::tm& tm);
-	};
+        // Calculate days between 2 dates
+        static int daysBetween(const TimePoint& start, const TimePoint& end);
+
+        // Check if date range is valid
+        static bool isValidDateRange(const TimePoint& start, const TimePoint& end);
+
+        // Add days to a date
+        static TimePoint addDays(const TimePoint& TimePoint, int days);
+
+    private:
+        // Helper function to convert time_point to tm struct
+        static std::tm timePointToTm(const TimePoint& TimePoint);
+
+        // Helper function to convert tm struct to time_point
+        static TimePoint tmToTimePoint(const std::tm& tm);
+    };
 }
