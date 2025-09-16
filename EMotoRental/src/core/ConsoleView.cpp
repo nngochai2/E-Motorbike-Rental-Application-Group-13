@@ -7,6 +7,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include "../managers/MotorbikeManager.h"
+
 namespace EMotoRental
 {
     ConsoleView::ConsoleView() {}
@@ -120,14 +122,23 @@ namespace EMotoRental
 
     // ============================================= MEMBER SCREENS ====================================================
 
-    void ConsoleView::displayMemberDashboard(const Member* member) {
+    void ConsoleView::displayMemberDashboard(const Member* member,
+                                            const RentalManager* rentalManager,
+                                            const MotorbikeManager* motorbikeManager) {
         if (!member) return;
 
         displayHeader("Member Dashboard");
         displayAccountOverview(member);
 
-        displayRentalSection("Your active rental booking", "No active rentals.");
-        displayRentalSection("Your active rental requests", "No pending request.");
+        // Enhanced rental sections with actual data
+        if (rentalManager && motorbikeManager) {
+            displayActiveRentalBookings(member, rentalManager, motorbikeManager);
+            displayActiveRentalRequests(member, rentalManager, motorbikeManager);
+        } else {
+            // Fallback to existing simple display
+            displayRentalSection("Your active rental booking", "No active rentals.");
+            displayRentalSection("Your active rental requests", "No pending requests.");
+        }
 
         displayFooter();
     }
@@ -140,8 +151,18 @@ namespace EMotoRental
         std::cout << "5. Register Motorbike\n";
         std::cout << "6. List Motorbike for Rent\n";
         std::cout << "7. Search Available Motorbikes\n";
-        std::cout << "8. View Rental History\n";
+        std::cout << "8. Rental Management\n";  // Leads to rental submenu
         std::cout << "0. Logout\n";
+    }
+
+    void ConsoleView::displayRentalMenu() {
+        displayHeader("Rental Management");
+        std::cout << "1. Search & Request Rental\n";
+        std::cout << "2. View My Rental Requests\n";
+        std::cout << "3. Approve Rental Requests\n";
+        std::cout << "4. Complete Rental\n";
+        std::cout << "5. Rate Rental Experience\n";
+        std::cout << "0. Back to Main Menu\n";
     }
 
     // ============================================== ADMIN SCREENS ====================================================
@@ -186,6 +207,25 @@ namespace EMotoRental
         }
 
         displayFooter();
+    }
+
+    bool ConsoleView::getRatingData(int& stars, std::string& comment) {
+        displayHeader("Rate Rental Experience");
+
+        stars = InputHelper::getIntInput("Enter rating (1-5 stars): ");
+        if (stars < 1 || stars > 5) {
+            InputHelper::displayError("Rating must be between 1 and 5!");
+            return false;
+        }
+
+        comment = InputHelper::getStringInput("Enter comment (optional): ");
+
+        // Show summary
+        displaySubHeader("Rating Summary");
+        std::cout << "Stars: " << stars << "/5\n";
+        std::cout << "Comment: " << (comment.empty() ? "(No comment)" : comment) << "\n";
+
+        return InputHelper::confirmAction("Submit this rating?");
     }
 
     // ============================================== GUEST SCREENS ====================================================
@@ -337,5 +377,71 @@ namespace EMotoRental
         std::cout << title << "\n";
         displaySeparator();
         std::cout << message << "\n\n";
+    }
+
+    void ConsoleView::displayActiveRentalBookings(const Member* member,
+                                             const RentalManager* rentalManager,
+                                             const MotorbikeManager* motorbikeManager) {
+        std::cout << "Your active rental booking\n";
+        displaySeparator();
+
+        const auto activeRentals = rentalManager->getActiveRentalsForMember(member->getUsername());
+
+        if (activeRentals.empty()) {
+            std::cout << "No active rental bookings.\n\n";
+            return;
+        }
+
+        std::cout << "Rent Period | Brand | Model | Color | Size | Plate No. | Owner | Status\n";
+        for (const Rental* rental : activeRentals) {
+            if (rental->getRenterUsername() == member->getUsername()) {
+                if (const Motorbike* bike = motorbikeManager->getMotorbikeByLicensePlate(rental->getMotorbikeLicensePlate())) {
+                    std::cout << DateUtil::formatDate(rental->getStartDate()) << "–"
+                              << DateUtil::formatDate(rental->getEndDate()) << " | "
+                              << bike->getBrand() << " | " << bike->getModel() << " | "
+                              << bike->getColor() << " | " << bike->getEngineSize() << "cc | "
+                              << bike->getLicensePlate() << " | " << rental->getOwnerUsername()
+                              << " | Active\n";
+                }
+            }
+        }
+        std::cout << "\n";
+    }
+
+    void ConsoleView::displayActiveRentalRequests(const Member* member,
+                                                const RentalManager* rentalManager,
+                                                const MotorbikeManager* motorbikeManager) {
+        std::cout << "Your active rental requests\n";
+        displaySeparator();
+
+        // Check if member owns a motorbike
+        Motorbike* ownedBike = motorbikeManager->getMotorbikeByOwner(member->getUsername());
+        if (!ownedBike) {
+            std::cout << "No motorbike registered for rental requests.\n\n";
+            return;
+        }
+
+        auto requests = rentalManager->getRequestsForMotorbike(ownedBike->getLicensePlate());
+
+        // Filter for pending requests only
+        std::vector<RentalRequest*> pendingRequests;
+        for (RentalRequest* request : requests) {
+            if (request->getStatus() == RequestStatus::PENDING) {
+                pendingRequests.push_back(request);
+            }
+        }
+
+        if (pendingRequests.empty()) {
+            std::cout << "No pending rental requests.\n\n";
+            return;
+        }
+
+        std::cout << "Rent period | Renter rating | Renter\n";
+        for (RentalRequest* request : pendingRequests) {
+            std::cout << DateUtil::formatDate(request->getStartDate()) << "–"
+                      << DateUtil::formatDate(request->getEndDate()) << " | "
+                      << "N/A | " << request->getRenterUsername() << "\n";
+        }
+        std::cout << "\n";
     }
 }

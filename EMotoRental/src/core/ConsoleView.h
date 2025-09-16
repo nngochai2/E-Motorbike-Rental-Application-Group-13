@@ -29,8 +29,12 @@ namespace EMotoRental
                                         std::string& email, std::string& phone);
 
         // Member Screens
-        static void displayMemberDashboard(const Member* member);
+        static void displayMemberDashboard(const Member* member,
+                                           const RentalManager* rentalManager = nullptr,
+                                           const MotorbikeManager* motorbikeManager = nullptr);
         static void displayMemberMenu();
+        static void displayRentalMenu();
+        static bool getRatingData(int& star, std::string& comment);
 
         // Admin Screens
         static void displayAdminMenu();
@@ -56,5 +60,10 @@ namespace EMotoRental
         static void displayUserTypeOptions();
         static void displayAccountOverview(const Member* member);
         static void displayRentalSection(const std::string& title, const std::string& message);
+
+        static void displayActiveRentalBookings(const Member* member, const RentalManager* rentalManager,
+                                                const MotorbikeManager* motorbikeManager);
+        static void displayActiveRentalRequests(const Member* member, const RentalManager* rentalManager,
+                                              const MotorbikeManager* motorbikeManager);
     };
 }
