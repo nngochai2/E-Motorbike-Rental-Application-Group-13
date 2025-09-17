@@ -39,10 +39,10 @@ add_executable(E_Motorbike_Rental_Application_Group_13
         EMotoRental/src/managers/DataManager.h
         EMotoRental/src/entities/Admin.cpp
         EMotoRental/src/entities/Admin.h
-        EMotoRental/src/entities/Admin.cpp
-        EMotoRental/src/entities/Admin.h
         EMotoRental/src/managers/MotorbikeManager.cpp
         EMotoRental/src/managers/MotorbikeManager.h
         EMotoRental/src/entities/Rating.cpp
         EMotoRental/src/entities/Rating.h
+        EMotoRental/src/managers/RentalManager.cpp
+        EMotoRental/src/managers/RentalManager.h
 )

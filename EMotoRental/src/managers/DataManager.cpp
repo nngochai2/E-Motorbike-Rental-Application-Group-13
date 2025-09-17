@@ -21,7 +21,6 @@ namespace EMotoRental
     const std::string DataManager::RENTALS_ACTIVE_DIR = "EMotoRental/data/rentals/active/";
     const std::string DataManager::RATINGS_DIR = "EMotoRental/data/rentals/ratings/";
 
-
     DataManager::DataManager() {
         authManager = nullptr;
         motorbikeManager = nullptr;

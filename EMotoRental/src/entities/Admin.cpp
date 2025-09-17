@@ -40,7 +40,7 @@ namespace EMotoRental {
             tokens.push_back(token);
         }
 
-        if (tokens.size() < 4) {
+        if (tokens.size() < 3) {
             return nullptr;
         }
 
