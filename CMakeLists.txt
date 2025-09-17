@@ -45,4 +45,6 @@ add_executable(E_Motorbike_Rental_Application_Group_13
         EMotoRental/src/entities/Rating.h
         EMotoRental/src/managers/RentalManager.cpp
         EMotoRental/src/managers/RentalManager.h
+        EMotoRental/src/utils/SampleDataGenerator.cpp
+        EMotoRental/src/utils/SampleDataGenerator.h
 )

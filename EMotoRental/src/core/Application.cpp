@@ -5,6 +5,7 @@
 #include "Application.h"
 #include <iostream>
 #include <iomanip>
+#include "../utils/SampleDataGenerator.h"
 
 namespace EMotoRental
 {
@@ -23,6 +24,9 @@ namespace EMotoRental
             else {
                 std::cout << "Warning: Some data could not be loaded." << std::endl;
             }
+
+            //Load seeded file
+            SampleDataGenerator::addDefaultAdmins(*dataManager->getAuthManager());
         }
         else {
             std::cerr << "Error: Failed to initialize data management system!" << std::endl;
