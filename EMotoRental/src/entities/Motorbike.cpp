@@ -297,12 +297,12 @@ namespace EMotoRental
 
     std::string Motorbike::toCSVString() const {
         std::ostringstream oss;
-        oss << brand << ","
+        oss << licensePlate << ","
+            << brand << ","
             << model << ","
             << color << ","
             << engineSize << ","
             << yearMade << ","
-            << licensePlate << ","
             << city << ","
             << dailyRate << ","
             << requiredRenterRating << ","
