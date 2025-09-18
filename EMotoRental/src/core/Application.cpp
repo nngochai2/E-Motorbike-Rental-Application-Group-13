@@ -228,7 +228,7 @@ namespace EMotoRental
                 handleCreditTopUp();
                 break;
             case 5:
-                handleMotorbikeRegistration();
+                handleMotorbikeManagement();
                 break;
             case 6:
                 handleMotorbikeListing();
@@ -690,7 +690,7 @@ namespace EMotoRental
             return;
         }
 
-        const auto currentMember = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        const auto currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
         const Motorbike* ownedBike = dataManager->getMotorbikeManager()->getMotorbikeByOwner(
             currentMember->getUsername());
 
@@ -719,7 +719,7 @@ namespace EMotoRental
         std::cout << "3. View Motorbike Details" << std::endl;
         std::cout << "0. Back to Main Menu" << std::endl;
 
-        int maxChoice = ownedBike->getIsListed() ? 3 : 3;
+        int maxChoice = 3; // FIXED: Always allow up to option 3
         int choice = InputHelper::getMenuChoice(0, maxChoice);
 
         switch (choice) {
@@ -738,12 +738,19 @@ namespace EMotoRental
                     InputHelper::waitForEnter();
                 }
             }
+            else {
+                // ADDED: Error message for invalid choice
+                InputHelper::displayError("Cannot unlist - motorbike is not currently listed.");
+                InputHelper::waitForEnter();
+            }
             break;
         case 3:
             ownedBike->displayDetails();
             InputHelper::waitForEnter();
             break;
-        default: ;
+        default:
+            // Default case handles invalid choices automatically by InputHelper::getMenuChoice
+            break;
         }
     }
 
@@ -821,8 +828,8 @@ namespace EMotoRental
                 InputHelper::displayError("City must be either 'HCMC' or 'Hanoi'.");
             }
 
-            DateUtil::TimePoint startDate = InputHelper::getDateInput("Enter rental start date: ");
-            DateUtil::TimePoint endDate = InputHelper::getDateInput("Enter rental end date: ");
+            DateUtil::TimePoint startDate = InputHelper::getDateInput("Enter rental start date");
+            DateUtil::TimePoint endDate = InputHelper::getDateInput("Enter rental end date");
 
             if (startDate >= endDate) {
                 InputHelper::displayError("End date must be after start date.");
@@ -976,7 +983,8 @@ namespace EMotoRental
 
         // Show active rentals (read-only)
 
-        if (auto activeRentals = dataManager->getRentalManager()->getActiveRentalsForMember(currentMember->getUsername()); activeRentals.empty()) {
+        if (auto activeRentals = dataManager->getRentalManager()->getActiveRentalsForMember(
+            currentMember->getUsername()); activeRentals.empty()) {
             InputHelper::displayMessage("You have no active rentals.");
         }
         else {
@@ -1111,7 +1119,8 @@ namespace EMotoRental
             if (isRenter) {
                 // Renter rates the motorbike
                 success = dataManager->getRentalManager()->createRating(currentMember->getUsername(),
-                                                                        rental->getMotorbikeLicensePlate(), stars, comment,
+                                                                        rental->getMotorbikeLicensePlate(), stars,
+                                                                        comment,
                                                                         rentalId,
                                                                         RatingType::MOTORBIKE_RATING,
                                                                         dataManager->getMotorbikeManager(),
@@ -1157,7 +1166,8 @@ namespace EMotoRental
 
         // Get all completed rentals for this member
 
-        for (const auto rentalHistory = dataManager->getRentalManager()->getRentalHistory(member->getUsername()); Rental* rental : rentalHistory) {
+        for (const auto rentalHistory = dataManager->getRentalManager()->getRentalHistory(member->getUsername()); Rental
+             * rental : rentalHistory) {
             if (rental->getStatus() != RentalStatus::COMPLETED) continue;
 
             bool needsRating = false;
@@ -1173,7 +1183,7 @@ namespace EMotoRental
                         rating->getReviewerId() == member->getUsername()) {
                         alreadyRated = true;
                         break;
-                        }
+                    }
                 }
                 if (!alreadyRated) needsRating = true;
             }
@@ -1189,7 +1199,7 @@ namespace EMotoRental
                         rating->getReviewerId() == member->getUsername()) {
                         alreadyRated = true;
                         break;
-                        }
+                    }
                 }
                 if (!alreadyRated) needsRating = true;
             }

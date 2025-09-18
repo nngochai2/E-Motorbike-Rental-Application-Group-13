@@ -28,11 +28,10 @@ namespace EMotoRental
         std::cout << "Instructor: Dr Ling Huo Chong, Dr Ushik Shrestha, Dr Tri Huynh\n";
         std::cout << "Group: Group No. 13\n";
         std::cout << "\n";
-        std::cout << "Group Members: 4\n";
+        std::cout << "Group Members: 3\n";
         std::cout << "s3978281, Nguyen Ngoc Hai\n";
-        std::cout << "XXXXXXX, [Student Name 2]\n";
-        std::cout << "XXXXXXX, [Student Name 3]\n";
-        std::cout << "XXXXXXX, [Student Name 4]\n";
+        std::cout << "s3978823, Tran Dinh Dong\n";
+        std::cout << "s3927474, Hoang Vinh Khue\n";
         std::cout << "\n";
         displaySeparator();
         std::cout << "\n";
@@ -257,8 +256,8 @@ namespace EMotoRental
 
         // Show summary
         displayHeader("Top-Up Summary");
-        std::cout << "Amount: $" << std::fixed << std::setprecision(2) << amount
-                    << " (" << amount << "Credit Points)\n\n";
+        std::cout << "Amount: " << std::fixed << std::setprecision(2) << amount
+                    << " (Credit Points)\n\n";
 
         return InputHelper::confirmAction("Proceed with top-up?");
     }
