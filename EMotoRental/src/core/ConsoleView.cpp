@@ -123,9 +123,9 @@ namespace EMotoRental
         displayHeader("Identity Verification Process");
 
         std::cout << "Complete identity verification to unlock premium features:\n";
-        std::cout << "• Access to all motorbike categories\n";
-        std::cout << "• Priority booking status\n";
-        std::cout << "• Reduced security deposits\n\n";
+        std::cout << "- Access to all motorbike categories\n";
+        std::cout << "- Priority booking status\n";
+        std::cout << "- Reduced security deposits\n\n";
 
         // Get ID type
         std::cout << "Select your ID document type:\n";
@@ -173,7 +173,7 @@ namespace EMotoRental
 
     void ConsoleView::displayVerificationResult(bool success, const std::string& message) {
         if (success) {
-            displayHeader("✓ VERIFICATION SUCCESSFUL");
+            displayHeader("VERIFICATION SUCCESSFUL");
             std::cout << "Your identity has been verified!\n\n";
             std::cout << "Benefits unlocked:\n";
             std::cout << "- Full access to all motorbike categories\n";
@@ -185,12 +185,12 @@ namespace EMotoRental
             }
         }
         else {
-            displayHeader("✗ VERIFICATION FAILED");
+            displayHeader("VERIFICATION FAILED");
             std::cout << "Identity verification was unsuccessful.\n\n";
             std::cout << "Common issues:\n";
-            std::cout << "• Incorrect document format\n";
-            std::cout << "• Incomplete profile information\n";
-            std::cout << "• Document numbers don't match expected format\n\n";
+            std::cout << "- Incorrect document format\n";
+            std::cout << "- Incomplete profile information\n";
+            std::cout << "- Document numbers don't match expected format\n\n";
             std::cout << "Please check your information and try again.\n";
             if (!message.empty()) {
                 std::cout << "\nDetails: " << message << "\n";

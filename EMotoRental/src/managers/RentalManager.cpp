@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "AuthManager.h"
+#include "DataManager.h"
 #include "MotorbikeManager.h"
 
 namespace EMotoRental
@@ -238,15 +239,21 @@ namespace EMotoRental
         auto overdueRentals = getOverdueRentals();
 
         if (overdueRentals.empty()) {
-            return; // No overdue rentals to process
+            return;
         }
 
-        // Process silently - no console output for normal operation
         for (Rental* rental : overdueRentals) {
             if (rental->isActive()) {
-                rental->complete(); // Direct completion without console output
+                recentlyCompletedRentals.push_back(rental->getRentalId());
+                rental->complete(); // Silent completion
             }
         }
+    }
+
+    std::vector<std::string> RentalManager::getAndClearRecentCompletions() {
+        std::vector<std::string> completions = recentlyCompletedRentals;
+        recentlyCompletedRentals.clear();
+        return completions;
     }
 
     // =============================================== RATING SYSTEM ===================================================
@@ -324,6 +331,10 @@ namespace EMotoRental
         // Create the rating
         auto* newRating = new Rating(reviewerUsername, revieweeId, stars, comment, rentalId, type);
         ratings.push_back(newRating);
+
+        if (!DataManager::saveRating(newRating)) {
+            std::cerr << "Warning: Rating created but could not be saved to file." << std::endl;
+        }
 
         // Update the reviewee's rating
         if (type == RatingType::RENTER_RATING) {

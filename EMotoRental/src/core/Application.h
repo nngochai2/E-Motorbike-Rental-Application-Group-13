@@ -57,6 +57,7 @@ namespace EMotoRental
         void handleRateRental();
         void checkAndProcessOverdueRentals();
         bool checkRatingRequirements(Member* member);
+        void checkForRentalCompletions();
 
         // Guest feature handlers
         void handleGuestMotorbikeBrowsing() const;

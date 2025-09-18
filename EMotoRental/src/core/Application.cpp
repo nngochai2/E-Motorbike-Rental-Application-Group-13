@@ -210,11 +210,17 @@ namespace EMotoRental
 
     void Application::handleMemberMenu() {
         bool memberSession = true;
+        bool hasCheckedCompletions = false; // Flag
 
         while (memberSession) {
             ConsoleView::displayMainMenu("Member");
 
-            switch (InputHelper::getMenuChoice(0, 9)) {  // UPDATED: Changed from 8 to 9
+            if (!hasCheckedCompletions) { // Only check once per session
+                checkForRentalCompletions();
+                hasCheckedCompletions = true;
+            }
+
+            switch (InputHelper::getMenuChoice(0, 9)) {
             case 1:
                 handleMemberDashboard();
                 break;
@@ -886,7 +892,7 @@ namespace EMotoRental
 
             for (size_t i = 0; i < results.size(); i++) {
                 std::cout << "\n--- Option #" << (i + 1) << " ---" << std::endl;
-                results[i]->displayPublicInfo();
+                results[i]->displayDetails();
 
                 // Show cost calculation
                 int days = DateUtil::daysBetween(startDate, endDate);
@@ -1194,13 +1200,12 @@ namespace EMotoRental
         }
     }
 
-
     bool Application::checkRatingRequirements(Member* member) {
         if (!member) return false;
 
         // Get all completed rentals for this member
 
-        for (const auto rentalHistory = dataManager->getRentalManager()->getRentalHistory(member->getUsername()); Rental
+        for (const auto rentalHistory = dataManager->getRentalManager()->getRentalHistory(member->getUsername()); const Rental
              * rental : rentalHistory) {
             if (rental->getStatus() != RentalStatus::COMPLETED) continue;
 
@@ -1249,6 +1254,26 @@ namespace EMotoRental
         return true;
     }
 
+    void Application::checkForRentalCompletions() {
+        if (!isUserLoggedIn() || !isMember()) return;
+
+        auto completedRentals = dataManager->getRentalManager()->getAndClearRecentCompletions();
+
+        if (!completedRentals.empty()) {
+            const auto* currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+
+            for (const std::string& rentalId : completedRentals) {
+                // Check if this member was involved in the rental
+                if (const Rental* rental = dataManager->getRentalManager()->getRentalById(rentalId)) {
+                    if (rental->getRenterUsername() == currentMember->getUsername() ||
+                        rental->getOwnerUsername() == currentMember->getUsername()) {
+
+                        std::cout << "Rental " << rentalId << " has been completed." << std::endl;
+                        }
+                }
+            }
+        }
+    }
 
     // ========================================== ADMIN FEATURE HANDLERS ===============================================
 
