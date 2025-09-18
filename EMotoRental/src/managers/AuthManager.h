@@ -26,6 +26,10 @@ namespace EMotoRental
         [[nodiscard]] User* getCurrentUser() const;
         [[nodiscard]] bool isLoggedIn() const;
 
+        // Identity verification
+        bool verifyMemberIdentity(const std::string& username, const std::string& idNumber,
+                                 const std::string& licenseNumber, const std::string& idType);
+
         // Registration
         bool registerMember(
             const std::string& username,
@@ -52,6 +56,12 @@ namespace EMotoRental
         // Helper methods
         void addDefaultAdmin();
         [[nodiscard]] bool userExists(const std::string& username) const;
+
+        // Helper methods for verification
+        static bool validateVietnameseID(const std::string& idNumber, const std::string& idType);
+        static bool validateDriverLicense(const std::string& licenseNumber);
+        static bool checkProfileCompleteness(const Member* member);
+
         void cleanupMemory();
     };
 }

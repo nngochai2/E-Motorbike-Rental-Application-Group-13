@@ -70,6 +70,172 @@ namespace EMotoRental
         return currentUser != nullptr;
     }
 
+    // =============================================== VERIFICATION ====================================================
+
+    bool AuthManager::verifyMemberIdentity(const std::string& username, const std::string& idNumber,
+                                           const std::string& licenseNumber, const std::string& idType) {
+        Member* member = findMemberByUsername(username);
+        if (!member) {
+            std::cout << "Member not found.\n";
+            return false;
+        }
+
+        if (member->getIsVerified()) {
+            std::cout << "Member is already verified.\n";
+            return true;
+        }
+
+        std::cout << "Processing identity verification...\n\n";
+
+        // Step 1: Validate Vietnamese ID format
+        bool idValid = validateVietnameseID(idNumber, idType);
+        if (idValid) {
+            std::cout << "✓ ID validation passed\n";
+        }
+        else {
+            std::cout << "✗ ID validation failed\n";
+        }
+
+        // Step 2: Validate driver's license
+        bool licenseValid = validateDriverLicense(licenseNumber);
+        if (licenseValid) {
+            std::cout << "✓ License validation passed\n";
+        }
+        else {
+            std::cout << "✗ License validation failed\n";
+        }
+
+        // Step 3: Check profile completeness
+        bool profileComplete = checkProfileCompleteness(member);
+        if (profileComplete) {
+            std::cout << "✓ Profile completeness check passed\n";
+        }
+        else {
+            std::cout << "✗ Profile completeness check failed\n";
+        }
+
+        // Verification decision: Require at least 2 out of 3 checks to pass
+        int passedChecks = idValid + licenseValid + profileComplete;
+
+        std::cout << "\nVerification Result: " << passedChecks << "/3 checks passed\n";
+
+        if (passedChecks >= 2) {
+            // Update member information
+            member->setIdNumber(idNumber);
+            member->setLicense(licenseNumber, true);
+            member->setVerified(true);
+
+            std::cout << "VERIFICATION SUCCESSFUL!\n";
+            std::cout << "Your account has been verified and you now have access to premium features.\n";
+            return true;
+        }
+        std::cout << "VERIFICATION FAILED!\n";
+        std::cout << "At least 2 out of 3 validation checks must pass.\n";
+        std::cout << "Please ensure your documents are correctly formatted and your profile is complete.\n";
+        return false;
+    }
+
+    bool AuthManager::validateVietnameseID(const std::string& idNumber, const std::string& idType) {
+        if (idType == "Citizen ID") {
+            // Vietnamese Citizen ID formats:
+            // New format: 12 digits (CCYY######) where CC=province code, YY=year of birth
+            // Old format: 9 digits
+            if (idNumber.length() == 12 || idNumber.length() == 9) {
+                // Check if all characters are digits
+                for (char c : idNumber) {
+                    if (!isdigit(c)) {
+                        return false;
+                    }
+                }
+
+                // Additional validation for new format
+                if (idNumber.length() == 12) {
+                    // Check if province code is valid (01-96)
+                    std::string provinceCode = idNumber.substr(0, 2);
+                    int province = std::stoi(provinceCode);
+                    if (province < 1 || province > 96) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        else if (idType == "Passport") {
+            // Vietnamese passport format: 8 characters (1 letter + 7 digits)
+            if (idNumber.length() == 8) {
+                // First character must be a letter
+                if (!isalpha(idNumber[0])) {
+                    return false;
+                }
+                // Remaining 7 characters must be digits
+                for (size_t i = 1; i < idNumber.length(); ++i) {
+                    if (!isdigit(idNumber[i])) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool AuthManager::validateDriverLicense(const std::string& licenseNumber) {
+        // Vietnamese driver's license format: 12 digits
+        if (licenseNumber.length() != 12) {
+            return false;
+        }
+
+        // Check if all characters are digits
+        for (char c : licenseNumber) {
+            if (!isdigit(c)) {
+                return false;
+            }
+        }
+
+        // Additional validation: license number shouldn't be all zeros or sequential
+        if (licenseNumber == "000000000000" || licenseNumber == "123456789012") {
+            return false;
+        }
+
+        return true;
+    }
+
+    bool AuthManager::checkProfileCompleteness(const Member* member) {
+        // Check if essential profile information is complete and valid
+
+        // 1. Email validation
+        std::string email = member->getEmail();
+        if (email.find('@') == std::string::npos || email.find('.') == std::string::npos) {
+            return false;
+        }
+
+        // 2. Phone number validation
+        std::string phone = member->getPhoneNumber();
+        if (phone.length() < 10) {
+            return false;
+        }
+
+        // 3. Full name validation
+        std::string fullName = member->getFullName();
+        if (fullName.empty() || fullName.length() < 3) {
+            return false;
+        }
+
+        // 4. Account standing (basic trust indicators)
+        if (member->getCreditPoints() < 0) {
+            return false; // Negative balance indicates issues
+        }
+
+        // 5. Username format (no suspicious patterns)
+        std::string username = member->getUsername();
+        if (username.length() < 3) {
+            return false;
+        }
+
+        return true;
+    }
+
     // =============================================== REGISTRATION ====================================================
 
     bool AuthManager::registerMember(
@@ -91,7 +257,9 @@ namespace EMotoRental
         // Validate password strength
         if (!validatePasswordStrength(password)) {
             std::cout << "Registration failed: Password does not meet strength requirements" << std::endl;
-            std::cout << "Ensure your password has at least 8 characters and contain an uppercase character, a digit, and a special character" << std::endl;
+            std::cout <<
+                "Ensure your password has at least 8 characters and contain an uppercase character, a digit, and a special character"
+                << std::endl;
             return false;
         }
 
@@ -179,15 +347,15 @@ namespace EMotoRental
             else if (c >= 'a' && c <= 'z') hasLower = true;
             else if (c >= '0' && c <= '9') hasDigit = true;
             else if (c == '!' || c == '@' || c == '#' || c == '$' ||
-                     c == '%' || c == '^' || c == '&' || c == '*' ||
-                     c == '(' || c == ')' || c == '-' || c == '_' ||
-                     c == '+' || c == '=' || c == '[' || c == ']' ||
-                     c == '{' || c == '}' || c == '|' || c == '\\' ||
-                     c == ':' || c == ';' || c == '"' || c == '\'' ||
-                     c == '<' || c == '>' || c == ',' || c == '.' ||
-                     c == '?' || c == '/') {
+                c == '%' || c == '^' || c == '&' || c == '*' ||
+                c == '(' || c == ')' || c == '-' || c == '_' ||
+                c == '+' || c == '=' || c == '[' || c == ']' ||
+                c == '{' || c == '}' || c == '|' || c == '\\' ||
+                c == ':' || c == ';' || c == '"' || c == '\'' ||
+                c == '<' || c == '>' || c == ',' || c == '.' ||
+                c == '?' || c == '/') {
                 hasSpecial = true;
-                     }
+            }
         }
 
         return hasUpper && hasLower && hasDigit && hasSpecial;

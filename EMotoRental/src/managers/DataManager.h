@@ -43,7 +43,7 @@ namespace EMotoRental
         bool saveAllData() const;
         void shutdown();
 
-        // Individual entity operations (efficient updates)
+        // Individual entity operations
         static bool saveMember(const Member* member);
         static bool loadMember(const std::string& username, Member*& member);
         static bool deleteMember(const std::string& username);
@@ -56,6 +56,8 @@ namespace EMotoRental
         static bool loadMotorbike(const std::string& licensePlate, Motorbike*& motorbike);
         static bool deleteMotorbike(const std::string& licensePlate);
         static bool updateMotorbike(const Motorbike* motorbike);
+
+        static bool saveRating(const Rating* rating);
 
         // Data integrity
         static bool validateDataConsistency();
@@ -82,7 +84,6 @@ namespace EMotoRental
         static bool loadRentalRequest(const std::string& requestId, RentalRequest*& request);
         static bool saveRental(const Rental* rental);
         static bool loadRental(const std::string& rentalId, Rental*& rental);
-        static bool saveRating(const Rating* rating);
         static bool loadRating(const std::string& ratingId, Rating*& rating);
 
         // File path helper methods

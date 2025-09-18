@@ -38,6 +38,7 @@ namespace EMotoRental
         std::vector<RentalRequest*> requests;
         std::vector<Rental*> rentals;
         std::vector<Rating*> ratings;
+        std::vector<std::string> recentlyCompletedRentals; // Store rental IDs
 
         // Helper methods
         void cleanupMemory();
@@ -64,6 +65,7 @@ namespace EMotoRental
                              const DateUtil::TimePoint& startDate,
                              const DateUtil::TimePoint& endDate) const;
         void processOverdueRental();
+        std::vector<std::string> getAndClearRecentCompletions();
 
         // Rating system
         bool createRating(const std::string& reviewerUsername,

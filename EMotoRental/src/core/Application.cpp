@@ -210,11 +210,17 @@ namespace EMotoRental
 
     void Application::handleMemberMenu() {
         bool memberSession = true;
+        bool hasCheckedCompletions = false; // Flag
 
         while (memberSession) {
             ConsoleView::displayMainMenu("Member");
 
-            switch (InputHelper::getMenuChoice(0, 8)) {
+            if (!hasCheckedCompletions) { // Only check once per session
+                checkForRentalCompletions();
+                hasCheckedCompletions = true;
+            }
+
+            switch (InputHelper::getMenuChoice(0, 9)) {
             case 1:
                 handleMemberDashboard();
                 break;
@@ -228,15 +234,18 @@ namespace EMotoRental
                 handleCreditTopUp();
                 break;
             case 5:
-                handleMotorbikeManagement();
+                handleIdentityVerification();
                 break;
             case 6:
-                handleMotorbikeListing();
+                handleMotorbikeManagement();
                 break;
             case 7:
-                handleMotorbikeSearch();
+                handleMotorbikeListing();
                 break;
             case 8:
+                handleMotorbikeSearch();
+                break;
+            case 9:
                 handleRentalMenu();
                 break;
             case 0:
@@ -244,7 +253,7 @@ namespace EMotoRental
                 memberSession = false;
                 break;
             default:
-                InputHelper::displayError("Invalid choice! Please select 0-8.");
+                InputHelper::displayError("Invalid choice! Please select 0-9.");
                 break;
             }
         }
@@ -516,7 +525,7 @@ namespace EMotoRental
 
                 // Update member's owned motorbike license plate
                 currentMember->setOwnedMotorbikeId(licensePlate);
-                dataManager->updateMember(currentMember);
+                DataManager::updateMember(currentMember);
 
                 // Display registered motorbike details
                 if (const Motorbike* newBike = dataManager->getMotorbikeManager()->getMotorbikeByLicensePlate(
@@ -645,8 +654,7 @@ namespace EMotoRental
                     results[i]->displayPublicInfo();
 
                     // Check if member meets requirements
-                    Member* currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
-                    if (results[i]->meetsRequirement(*currentMember)) {
+                    if (auto* currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser()); results[i]->meetsRequirement(*currentMember)) {
                         std::cout << "✓ You meet the requirements for this motorbike." << std::endl;
                     }
                     else {
@@ -668,7 +676,7 @@ namespace EMotoRental
         InputHelper::waitForEnter();
     }
 
-    void Application::displayGuestMotorbikeInfo(const Motorbike* bike) const {
+    void Application::displayGuestMotorbikeInfo(const Motorbike* bike) {
         // Project requirement: Guests can only see brand, model, engine size, location
         std::cout << "Brand: " << bike->getBrand() << " | Model: " << bike->getModel() << std::endl;
         std::cout << "Engine: " << bike->getEngineSize() << "cc | City: " << bike->getCity() << std::endl;
@@ -768,6 +776,39 @@ namespace EMotoRental
         InputHelper::waitForEnter();
     }
 
+    void Application::handleIdentityVerification() const {
+        const auto* currentUser = dataManager->getAuthManager()->getCurrentUser();
+        const auto* member = dynamic_cast<const Member*>(currentUser);
+
+        if (!member) {
+            InputHelper::displayError("Member authentication required!");
+            return;
+        }
+
+        if (member->getIsVerified()) {
+            ConsoleView::displayVerificationResult(true, "Account already verified.");
+            InputHelper::waitForEnter();
+            return;
+        }
+
+        std::string idNumber, licenseNumber, idType;
+
+        if (ConsoleView::getVerificationData(idNumber, licenseNumber, idType)) {
+            bool success = dataManager->getAuthManager()->verifyMemberIdentity(
+                member->getUsername(), idNumber, licenseNumber, idType);
+
+            ConsoleView::displayVerificationResult(success);
+
+            if (success) {
+                // Save updated member data
+                DataManager::saveMember(member);
+                std::cout << "Your verification status has been saved.\n";
+            }
+        }
+
+        InputHelper::waitForEnter();
+    }
+
     // ========================================= RENTAL FEATURE HANDLERS ===============================================
 
     void Application::handleRentalMenu() {
@@ -851,7 +892,7 @@ namespace EMotoRental
 
             for (size_t i = 0; i < results.size(); i++) {
                 std::cout << "\n--- Option #" << (i + 1) << " ---" << std::endl;
-                results[i]->displayPublicInfo();
+                results[i]->displayDetails();
 
                 // Show cost calculation
                 int days = DateUtil::daysBetween(startDate, endDate);
@@ -898,16 +939,16 @@ namespace EMotoRental
         InputHelper::waitForEnter();
     }
 
-    void Application::handleViewRentalRequests() {
+    void Application::handleViewRentalRequests() const {
         if (!isUserLoggedIn() || !isMember()) {
             InputHelper::displayError("Please log in as a member.");
             return;
         }
 
-        Member* currentMember = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        const auto* currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
 
         // Show requests BY this member
-        auto myRequests = dataManager->getRentalManager()->getRequestsFromRenter(currentMember->getUsername());
+        const auto myRequests = dataManager->getRentalManager()->getRequestsFromRenter(currentMember->getUsername());
         ConsoleView::displayHeader("Your Rental Requests");
 
         if (myRequests.empty()) {
@@ -921,8 +962,7 @@ namespace EMotoRental
         }
 
         // Show requests FOR this member's motorbike
-        Motorbike* ownedBike = dataManager->getMotorbikeManager()->getMotorbikeByOwner(currentMember->getUsername());
-        if (ownedBike) {
+        if (dataManager->getMotorbikeManager()->getMotorbikeByOwner(currentMember->getUsername())) {
             std::cout << "\n" << std::endl;
             dataManager->getRentalManager()->displayRequestsForOwner(currentMember->getUsername(),
                                                                      dataManager->getMotorbikeManager());
@@ -937,7 +977,7 @@ namespace EMotoRental
             return;
         }
 
-        Member* currentMember = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        const auto* currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
 
         // Check if member owns a motorbike
         Motorbike* ownedBike = dataManager->getMotorbikeManager()->getMotorbikeByOwner(currentMember->getUsername());
@@ -1160,13 +1200,12 @@ namespace EMotoRental
         }
     }
 
-
     bool Application::checkRatingRequirements(Member* member) {
         if (!member) return false;
 
         // Get all completed rentals for this member
 
-        for (const auto rentalHistory = dataManager->getRentalManager()->getRentalHistory(member->getUsername()); Rental
+        for (const auto rentalHistory = dataManager->getRentalManager()->getRentalHistory(member->getUsername()); const Rental
              * rental : rentalHistory) {
             if (rental->getStatus() != RentalStatus::COMPLETED) continue;
 
@@ -1215,6 +1254,26 @@ namespace EMotoRental
         return true;
     }
 
+    void Application::checkForRentalCompletions() {
+        if (!isUserLoggedIn() || !isMember()) return;
+
+        auto completedRentals = dataManager->getRentalManager()->getAndClearRecentCompletions();
+
+        if (!completedRentals.empty()) {
+            const auto* currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+
+            for (const std::string& rentalId : completedRentals) {
+                // Check if this member was involved in the rental
+                if (const Rental* rental = dataManager->getRentalManager()->getRentalById(rentalId)) {
+                    if (rental->getRenterUsername() == currentMember->getUsername() ||
+                        rental->getOwnerUsername() == currentMember->getUsername()) {
+
+                        std::cout << "Rental " << rentalId << " has been completed." << std::endl;
+                        }
+                }
+            }
+        }
+    }
 
     // ========================================== ADMIN FEATURE HANDLERS ===============================================
 

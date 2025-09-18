@@ -31,7 +31,6 @@ namespace EMotoRental
 
     void Rental::complete() {
         status = RentalStatus::COMPLETED;
-        std::cout << "Rental " << rentalId << " has been completed." << std::endl;
     }
 
     bool Rental::isActive() const {

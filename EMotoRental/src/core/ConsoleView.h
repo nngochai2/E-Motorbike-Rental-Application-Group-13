@@ -27,6 +27,8 @@ namespace EMotoRental
         static std::string getPassword();
         static bool getRegistrationData(std::string& username, std::string& password, std::string& fullName,
                                         std::string& email, std::string& phone);
+        static bool getVerificationData(std::string& idNumber, std::string& licenseNumber, std::string& idType);
+        static void displayVerificationResult(bool success, const std::string& message = "");
 
         // Member Screens
         static void displayMemberDashboard(const Member* member,
