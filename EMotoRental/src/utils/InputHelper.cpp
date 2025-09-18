@@ -67,7 +67,7 @@ namespace EMotoRental
 
     DateUtil::TimePoint InputHelper::getDateInput(const std::string& prompt) {
         while (true) {
-            std::string dateStr = getStringInput(prompt + " (DD/MM/YYYY");
+            std::string dateStr = getStringInput(prompt + " (DD/MM/YYYY)");
 
             if (dateStr.empty()) {
                 displayError("Data cannot be empty!");

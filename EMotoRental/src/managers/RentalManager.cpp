@@ -234,6 +234,21 @@ namespace EMotoRental
         return true;
     }
 
+    void RentalManager::processOverdueRental() {
+        auto overdueRentals = getOverdueRentals();
+
+        if (overdueRentals.empty()) {
+            return; // No overdue rentals to process
+        }
+
+        // Process silently - no console output for normal operation
+        for (Rental* rental : overdueRentals) {
+            if (rental->isActive()) {
+                rental->complete(); // Direct completion without console output
+            }
+        }
+    }
+
     // =============================================== RATING SYSTEM ===================================================
 
     bool RentalManager::createRating(const std::string& reviewerUsername, const std::string& revieweeId, int stars,

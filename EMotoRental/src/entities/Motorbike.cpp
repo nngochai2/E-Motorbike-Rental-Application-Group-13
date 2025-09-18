@@ -297,12 +297,12 @@ namespace EMotoRental
 
     std::string Motorbike::toCSVString() const {
         std::ostringstream oss;
-        oss << brand << ","
+        oss << licensePlate << ","
+            << brand << ","
             << model << ","
             << color << ","
             << engineSize << ","
             << yearMade << ","
-            << licensePlate << ","
             << city << ","
             << dailyRate << ","
             << requiredRenterRating << ","
@@ -318,7 +318,7 @@ namespace EMotoRental
     Motorbike* Motorbike::fromCSVString(const std::string& csvData) {
         const std::vector<std::string> tokens = FileHandler::parseCSVLine(csvData);
 
-        if (tokens.size() < 15) {
+        if (tokens.size() < 14) {
             std::cerr << "Invalid motorbike CSV data: not enough fields" << std::endl;
             return nullptr;
         }

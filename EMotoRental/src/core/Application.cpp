@@ -50,6 +50,9 @@ namespace EMotoRental
 
         ConsoleView::displayWelcomeScreen();
 
+        // Process any overdue rentals from previous sessions
+        checkAndProcessOverdueRentals();
+
         while (isRunning) {
             try {
                 handleUserTypeSelection();
@@ -225,7 +228,7 @@ namespace EMotoRental
                 handleCreditTopUp();
                 break;
             case 5:
-                handleMotorbikeRegistration();
+                handleMotorbikeManagement();
                 break;
             case 6:
                 handleMotorbikeListing();
@@ -687,7 +690,7 @@ namespace EMotoRental
             return;
         }
 
-        const auto currentMember = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        const auto currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
         const Motorbike* ownedBike = dataManager->getMotorbikeManager()->getMotorbikeByOwner(
             currentMember->getUsername());
 
@@ -716,7 +719,7 @@ namespace EMotoRental
         std::cout << "3. View Motorbike Details" << std::endl;
         std::cout << "0. Back to Main Menu" << std::endl;
 
-        int maxChoice = ownedBike->getIsListed() ? 3 : 3;
+        int maxChoice = 3; // FIXED: Always allow up to option 3
         int choice = InputHelper::getMenuChoice(0, maxChoice);
 
         switch (choice) {
@@ -735,12 +738,19 @@ namespace EMotoRental
                     InputHelper::waitForEnter();
                 }
             }
+            else {
+                // ADDED: Error message for invalid choice
+                InputHelper::displayError("Cannot unlist - motorbike is not currently listed.");
+                InputHelper::waitForEnter();
+            }
             break;
         case 3:
             ownedBike->displayDetails();
             InputHelper::waitForEnter();
             break;
-        default: ;
+        default:
+            // Default case handles invalid choices automatically by InputHelper::getMenuChoice
+            break;
         }
     }
 
@@ -776,6 +786,9 @@ namespace EMotoRental
                 handleApproveRentalRequest();
                 break;
             case 4:
+                handleViewActiveRentals();
+                break;
+            case 5:
                 handleRateRental();
                 break;
             case 0:
@@ -794,7 +807,14 @@ namespace EMotoRental
             return;
         }
 
-        Member* currentMember = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        auto* currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+
+        // ENFORCE RATING REQUIREMENT
+        if (!checkRatingRequirements(currentMember)) {
+            InputHelper::waitForEnter();
+            return;
+        }
+
         ConsoleView::displayHeader("Create Rental Request");
 
         try {
@@ -808,8 +828,8 @@ namespace EMotoRental
                 InputHelper::displayError("City must be either 'HCMC' or 'Hanoi'.");
             }
 
-            DateUtil::TimePoint startDate = InputHelper::getDateInput("Enter rental start date: ");
-            DateUtil::TimePoint endDate = InputHelper::getDateInput("Enter rental end date: ");
+            DateUtil::TimePoint startDate = InputHelper::getDateInput("Enter rental start date");
+            DateUtil::TimePoint endDate = InputHelper::getDateInput("Enter rental end date");
 
             if (startDate >= endDate) {
                 InputHelper::displayError("End date must be after start date.");
@@ -952,17 +972,50 @@ namespace EMotoRental
         InputHelper::waitForEnter();
     }
 
+    void Application::handleViewActiveRentals() {
+        if (!isUserLoggedIn() || !isMember()) {
+            InputHelper::displayError("Please log in as a member.");
+            return;
+        }
+
+        const auto* currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        ConsoleView::displayHeader("Active Rentals");
+
+        // Show active rentals (read-only)
+
+        if (auto activeRentals = dataManager->getRentalManager()->getActiveRentalsForMember(
+            currentMember->getUsername()); activeRentals.empty()) {
+            InputHelper::displayMessage("You have no active rentals.");
+        }
+        else {
+            std::cout << "Your active rentals:" << std::endl;
+            for (size_t i = 0; i < activeRentals.size(); ++i) {
+                std::cout << "\n--- Rental #" << (i + 1) << " ---" << std::endl;
+                activeRentals[i]->displayInfo();
+
+                // Show if overdue
+                if (activeRentals[i]->isOverdue()) {
+                    std::cout << "OVERDUE - Rental period has ended!" << std::endl;
+                }
+            }
+
+            InputHelper::displayMessage("Note: Rentals automatically complete when the rental period ends.");
+        }
+
+        InputHelper::waitForEnter();
+    }
+
     void Application::handleRateRental() {
         if (!isUserLoggedIn() || !isMember()) {
             InputHelper::displayError("Please log in as a member.");
             return;
         }
 
-        Member* currentMember = static_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
+        const auto* currentMember = dynamic_cast<Member*>(dataManager->getAuthManager()->getCurrentUser());
         ConsoleView::displayHeader("Rate Rental Experience");
 
         // Get completed rentals
-        auto rentalHistory = dataManager->getRentalManager()->getRentalHistory(currentMember->getUsername());
+        const auto rentalHistory = dataManager->getRentalManager()->getRentalHistory(currentMember->getUsername());
 
         std::vector<Rental*> completedRentals;
         for (Rental* rental : rentalHistory) {
@@ -977,56 +1030,191 @@ namespace EMotoRental
             return;
         }
 
-        std::cout << "Completed rentals available for rating:" << std::endl;
-        for (size_t i = 0; i < completedRentals.size(); ++i) {
-            std::cout << "\n--- Rental #" << (i + 1) << " ---" << std::endl;
-            completedRentals[i]->displayInfo();
+        // Show unrated rentals first
+        std::vector<Rental*> unratedRentals;
+        for (Rental* rental : completedRentals) {
+            bool needsRating = false;
+
+            if (rental->getRenterUsername() == currentMember->getUsername()) {
+                // Renter needs to rate motorbike
+                auto existingRatings = dataManager->getRentalManager()->getRatingsForEntity(
+                    rental->getMotorbikeLicensePlate(), RatingType::MOTORBIKE_RATING);
+
+                bool alreadyRated = false;
+                for (const Rating* rating : existingRatings) {
+                    if (rating->getRentalId() == rental->getRentalId() &&
+                        rating->getReviewerId() == currentMember->getUsername()) {
+                        alreadyRated = true;
+                        break;
+                    }
+                }
+                if (!alreadyRated) needsRating = true;
+            }
+
+            if (rental->getOwnerUsername() == currentMember->getUsername()) {
+                // Owner needs to rate renter
+                auto existingRatings = dataManager->getRentalManager()->getRatingsForEntity(
+                    rental->getRenterUsername(), RatingType::RENTER_RATING);
+
+                bool alreadyRated = false;
+                for (Rating* rating : existingRatings) {
+                    if (rating->getRentalId() == rental->getRentalId() &&
+                        rating->getReviewerId() == currentMember->getUsername()) {
+                        alreadyRated = true;
+                        break;
+                    }
+                }
+                if (!alreadyRated) needsRating = true;
+            }
+
+            if (needsRating) {
+                unratedRentals.push_back(rental);
+            }
+        }
+
+        if (unratedRentals.empty()) {
+            InputHelper::displayMessage("All completed rentals have been rated. Thank you!");
+            InputHelper::waitForEnter();
+            return;
+        }
+
+        // Show warning if there are unrated rentals
+        if (!unratedRentals.empty()) {
+            std::cout << "You have " << unratedRentals.size()
+                << " completed rental(s) that require rating!" << std::endl;
+            std::cout << "You must rate all completed rentals to continue using the system." << std::endl;
+            std::cout << std::endl;
+        }
+
+        // Display rentals that need rating
+        std::cout << "Completed rentals requiring your rating:" << std::endl;
+        for (size_t i = 0; i < unratedRentals.size(); ++i) {
+            std::cout << "\n--- Rental #" << (i + 1) << " (NEEDS RATING) ---" << std::endl;
+            unratedRentals[i]->displayInfo();
         }
 
         std::string rentalId = InputHelper::getStringInput("Enter Rental ID to rate: ");
 
+        // Find the rental
+        Rental* rental = dataManager->getRentalManager()->getRentalById(rentalId);
+        if (!rental || rental->getStatus() != RentalStatus::COMPLETED) {
+            InputHelper::displayError("Invalid rental or rental not completed.");
+            return;
+        }
+
+        // Determine what needs to be rated
+        bool isRenter = (rental->getRenterUsername() == currentMember->getUsername());
+        bool isOwner = (rental->getOwnerUsername() == currentMember->getUsername());
+
+        if (!isRenter && !isOwner) {
+            InputHelper::displayError("You are not part of this rental.");
+            return;
+        }
+
         int stars;
         std::string comment;
         if (ConsoleView::getRatingData(stars, comment)) {
-            Rental* rental = dataManager->getRentalManager()->getRentalById(rentalId);
-            if (!rental) {
-                InputHelper::displayError("Invalid rental ID.");
-                return;
-            }
-
-            // Determine what to rate based on user role
-            bool isRenter = (rental->getRenterUsername() == currentMember->getUsername());
+            bool success = false;
 
             if (isRenter) {
-                // Rate the motorbike
-                if (dataManager->getRentalManager()->createRating(currentMember->getUsername(),
-                                                                  rental->getMotorbikeLicensePlate(), stars, comment, rentalId,
-                                                                  RatingType::MOTORBIKE_RATING,
-                                                                  dataManager->getMotorbikeManager(),
-                                                                  dataManager->getAuthManager())) {
+                // Renter rates the motorbike
+                success = dataManager->getRentalManager()->createRating(currentMember->getUsername(),
+                                                                        rental->getMotorbikeLicensePlate(), stars,
+                                                                        comment,
+                                                                        rentalId,
+                                                                        RatingType::MOTORBIKE_RATING,
+                                                                        dataManager->getMotorbikeManager(),
+                                                                        dataManager->getAuthManager());
+
+                if (success) {
                     InputHelper::displaySuccess("Motorbike rating submitted!");
                 }
-                else {
-                    InputHelper::displayError("Failed to submit rating.");
-                }
             }
-            else {
-                // Rate the renter
-                if (dataManager->getRentalManager()->createRating(currentMember->getUsername(),
-                                                                  rental->getRenterUsername(), stars, comment, rentalId,
-                                                                  RatingType::RENTER_RATING,
-                                                                  dataManager->getMotorbikeManager(),
-                                                                  dataManager->getAuthManager())) {
+
+            if (isOwner) {
+                // Owner rates the renter
+                success = dataManager->getRentalManager()->createRating(currentMember->getUsername(),
+                                                                        rental->getRenterUsername(), stars, comment,
+                                                                        rentalId,
+                                                                        RatingType::RENTER_RATING,
+                                                                        dataManager->getMotorbikeManager(),
+                                                                        dataManager->getAuthManager());
+
+                if (success) {
                     InputHelper::displaySuccess("Renter rating submitted!");
                 }
-                else {
-                    InputHelper::displayError("Failed to submit rating.");
-                }
+            }
+
+            if (!success) {
+                InputHelper::displayError("Failed to submit rating.");
             }
         }
 
+
         InputHelper::waitForEnter();
     }
+
+    void Application::checkAndProcessOverdueRentals() {
+        if (dataManager && dataManager->getRentalManager()) {
+            dataManager->getRentalManager()->processOverdueRental();
+        }
+    }
+
+
+    bool Application::checkRatingRequirements(Member* member) {
+        if (!member) return false;
+
+        // Get all completed rentals for this member
+
+        for (const auto rentalHistory = dataManager->getRentalManager()->getRentalHistory(member->getUsername()); Rental
+             * rental : rentalHistory) {
+            if (rental->getStatus() != RentalStatus::COMPLETED) continue;
+
+            bool needsRating = false;
+
+            if (rental->getRenterUsername() == member->getUsername()) {
+                // Check if renter rated the motorbike
+                auto existingRatings = dataManager->getRentalManager()->getRatingsForEntity(
+                    rental->getMotorbikeLicensePlate(), RatingType::MOTORBIKE_RATING);
+
+                bool alreadyRated = false;
+                for (Rating* rating : existingRatings) {
+                    if (rating->getRentalId() == rental->getRentalId() &&
+                        rating->getReviewerId() == member->getUsername()) {
+                        alreadyRated = true;
+                        break;
+                    }
+                }
+                if (!alreadyRated) needsRating = true;
+            }
+
+            if (rental->getOwnerUsername() == member->getUsername()) {
+                // Check if owner rated the renter
+                auto existingRatings = dataManager->getRentalManager()->getRatingsForEntity(
+                    rental->getRenterUsername(), RatingType::RENTER_RATING);
+
+                bool alreadyRated = false;
+                for (const Rating* rating : existingRatings) {
+                    if (rating->getRentalId() == rental->getRentalId() &&
+                        rating->getReviewerId() == member->getUsername()) {
+                        alreadyRated = true;
+                        break;
+                    }
+                }
+                if (!alreadyRated) needsRating = true;
+            }
+
+            if (needsRating) {
+                InputHelper::displayError("You have unrated completed rentals!");
+                InputHelper::displayMessage("Please rate all completed rentals before creating new requests.");
+                InputHelper::displayMessage("Go to: Rental Management > Rate Rental Experience");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 
     // ========================================== ADMIN FEATURE HANDLERS ===============================================
 
