@@ -52,7 +52,10 @@ namespace EMotoRental
         void handleCreateRentalRequest();
         void handleViewRentalRequests();
         void handleApproveRentalRequest();
+        void handleViewActiveRentals();
         void handleRateRental();
+        void checkAndProcessOverdueRentals();
+        bool checkRatingRequirements(Member* member);
 
         // Guest feature handlers
         void handleGuestMotorbikeBrowsing() const;

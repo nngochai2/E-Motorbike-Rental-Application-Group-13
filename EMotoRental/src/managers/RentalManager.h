@@ -63,6 +63,7 @@ namespace EMotoRental
                              const std::string& motorbikeLicensePlate,
                              const DateUtil::TimePoint& startDate,
                              const DateUtil::TimePoint& endDate) const;
+        void processOverdueRental();
 
         // Rating system
         bool createRating(const std::string& reviewerUsername,
