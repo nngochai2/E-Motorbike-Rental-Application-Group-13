@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <iostream>
 
+#include "DataInitializer.h"
 #include "FileHandler.h"
 
 namespace EMotoRental
@@ -64,6 +65,15 @@ namespace EMotoRental
         if (!createDirectoryStructure()) {
             std::cerr << "DataManager: Failed to create directory structure." << std::endl;
             return false;
+        }
+
+        // Initialize default data on first run
+        if (DataInitializer::isFirstRun()) {
+            std::cout << "DataManager: First run detected. Setting up demonstration data..." << std::endl;
+            if (!DataInitializer::initializeDefaultData()) {
+                std::cerr << "DataManager: Failed to initialize default data." << std::endl;
+                return false;
+            }
         }
 
         std::cout << "DataManager: Directory structure created successfully." << std::endl;

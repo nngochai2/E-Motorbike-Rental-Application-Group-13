@@ -73,7 +73,7 @@ namespace EMotoRental
 
     bool Member::hasOwnedMotorbike() const
     {
-        return !ownedMotorbikeId.empty();
+        return !ownedMotorbikeId.empty() && ownedMotorbikeId != "NONE";
     }
 
     // Virtual implementations
