@@ -46,11 +46,12 @@ namespace EMotoRental
         void handleCreditTopUp();
         void handleMotorbikeRegistration();
         void handleRentalHistory() const;
+        void handleIdentityVerification() const;
 
         // Rental feature handlers
         void handleRentalMenu();
         void handleCreateRentalRequest();
-        void handleViewRentalRequests();
+        void handleViewRentalRequests() const;
         void handleApproveRentalRequest();
         void handleViewActiveRentals();
         void handleRateRental();
@@ -65,7 +66,7 @@ namespace EMotoRental
         // Motorbike feature handlers
         void handleMotorbikeListing() const;
         void handleMotorbikeSearch() const;
-        void displayGuestMotorbikeInfo(const Motorbike* bike) const;
+        static void displayGuestMotorbikeInfo(const Motorbike* bike) ;
         void handleMotorbikeManagement();
 
         // Admin feature handlers

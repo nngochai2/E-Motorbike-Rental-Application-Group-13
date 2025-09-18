@@ -11,16 +11,13 @@
 
 namespace EMotoRental
 {
-    ConsoleView::ConsoleView() {}
+    ConsoleView::ConsoleView() = default;
 
-    ConsoleView::~ConsoleView() {}
+    ConsoleView::~ConsoleView() = default;
 
     // ========================================== WELCOME AND MAIN SCREENS =============================================
 
     void ConsoleView::displayWelcomeScreen() {
-        // Remove this to ignore inconsistent performances
-        // clearScreen();
-
         std::cout << "\n";
         std::cout << "EEET2482/EEET2653/COSC2082/COSC2721 GROUP PROJECT\n";
         std::cout << "Semester 2 2025\n";
@@ -47,9 +44,11 @@ namespace EMotoRental
 
         if (userType == "Guest") {
             displayGuestMenu();
-        } else if (userType == "Member") {
+        }
+        else if (userType == "Member") {
             displayMemberMenu();
-        } else if (userType == "Admin") {
+        }
+        else if (userType == "Admin") {
             displayAdminMenu();
         }
     }
@@ -65,7 +64,7 @@ namespace EMotoRental
     }
 
     bool ConsoleView::getRegistrationData(std::string& username, std::string& password, std::string& fullName,
-                                        std::string& email, std::string& phone) {
+                                          std::string& email, std::string& phone) {
         displayHeader("Member Registration");
 
         // Get username
@@ -83,7 +82,8 @@ namespace EMotoRental
         }
 
         // Confirm password
-        if (const std::string confirmPass = InputHelper::getPasswordInput("Confirm password: "); password != confirmPass) {
+        if (const std::string confirmPass = InputHelper::getPasswordInput("Confirm password: "); password !=
+            confirmPass) {
             InputHelper::displayError("Passwords does not match!");
             return false;
         }
@@ -119,11 +119,90 @@ namespace EMotoRental
         return InputHelper::confirmAction("Proceed with registration?");
     }
 
+    bool ConsoleView::getVerificationData(std::string& idNumber, std::string& licenseNumber, std::string& idType) {
+        displayHeader("Identity Verification Process");
+
+        std::cout << "Complete identity verification to unlock premium features:\n";
+        std::cout << "• Access to all motorbike categories\n";
+        std::cout << "• Priority booking status\n";
+        std::cout << "• Reduced security deposits\n\n";
+
+        // Get ID type
+        std::cout << "Select your ID document type:\n";
+        std::cout << "1. Citizen ID\n";
+        std::cout << "2. Passport\n";
+        int choice = InputHelper::getMenuChoice(1, 2);
+        idType = (choice == 1) ? "Citizen ID" : "Passport";
+
+        // Get ID number with format hints
+        if (idType == "Citizen ID") {
+            std::cout << "\nEnter your Citizen ID number:\n";
+            std::cout << "Format: 12 digits (new) or 9 digits (old)\n";
+            std::cout << "Example: 079087001234 or 123456789\n";
+        }
+        else {
+            std::cout << "\nEnter your Passport number:\n";
+            std::cout << "Format: 1 letter + 7 digits\n";
+            std::cout << "Example: B1234567\n";
+        }
+
+        idNumber = InputHelper::getStringInput("ID Number: ");
+        if (idNumber.empty()) {
+            InputHelper::displayError("ID number cannot be empty!");
+            return false;
+        }
+
+        // Get license number
+        std::cout << "\nEnter your driver's license number:\n";
+        std::cout << "Format: 12 digits\n";
+        std::cout << "Example: 123456789012\n";
+        licenseNumber = InputHelper::getStringInput("License Number: ");
+        if (licenseNumber.empty()) {
+            InputHelper::displayError("License number cannot be empty!");
+            return false;
+        }
+
+        // Show summary
+        displaySubHeader("Verification Summary");
+        std::cout << "ID Type: " << idType << "\n";
+        std::cout << "ID Number: " << idNumber << "\n";
+        std::cout << "License Number: " << licenseNumber << "\n\n";
+
+        return InputHelper::confirmAction("Submit for verification?");
+    }
+
+    void ConsoleView::displayVerificationResult(bool success, const std::string& message) {
+        if (success) {
+            displayHeader("✓ VERIFICATION SUCCESSFUL");
+            std::cout << "Your identity has been verified!\n\n";
+            std::cout << "Benefits unlocked:\n";
+            std::cout << "- Full access to all motorbike categories\n";
+            std::cout << "- Priority booking status\n";
+            std::cout << "- Trusted member badge\n";
+            std::cout << "- Reduced security requirements\n\n";
+            if (!message.empty()) {
+                std::cout << message << "\n";
+            }
+        }
+        else {
+            displayHeader("✗ VERIFICATION FAILED");
+            std::cout << "Identity verification was unsuccessful.\n\n";
+            std::cout << "Common issues:\n";
+            std::cout << "• Incorrect document format\n";
+            std::cout << "• Incomplete profile information\n";
+            std::cout << "• Document numbers don't match expected format\n\n";
+            std::cout << "Please check your information and try again.\n";
+            if (!message.empty()) {
+                std::cout << "\nDetails: " << message << "\n";
+            }
+        }
+    }
+
     // ============================================= MEMBER SCREENS ====================================================
 
     void ConsoleView::displayMemberDashboard(const Member* member,
-                                            const RentalManager* rentalManager,
-                                            const MotorbikeManager* motorbikeManager) {
+                                             const RentalManager* rentalManager,
+                                             const MotorbikeManager* motorbikeManager) {
         if (!member) return;
 
         displayHeader("Member Dashboard");
@@ -133,7 +212,8 @@ namespace EMotoRental
         if (rentalManager && motorbikeManager) {
             displayActiveRentalBookings(member, rentalManager, motorbikeManager);
             displayActiveRentalRequests(member, rentalManager, motorbikeManager);
-        } else {
+        }
+        else {
             // Fallback to existing simple display
             displayRentalSection("Your active rental booking", "No active rentals.");
             displayRentalSection("Your active rental requests", "No pending requests.");
@@ -147,10 +227,11 @@ namespace EMotoRental
         std::cout << "2. Update Profile\n";
         std::cout << "3. Change Password\n";
         std::cout << "4. Top Up Credit Points\n";
-        std::cout << "5. Register Motorbike\n";
-        std::cout << "6. List Motorbike for Rent\n";
-        std::cout << "7. Search Available Motorbikes\n";
-        std::cout << "8. Rental Management\n";  // Leads to rental submenu
+        std::cout << "5. Identity Verification\n";
+        std::cout << "6. Manage Motorbike\n";
+        std::cout << "7. List Motorbike for Rent\n";
+        std::cout << "8. Search Available Motorbikes\n";
+        std::cout << "9. View Rental History\n";
         std::cout << "0. Logout\n";
     }
 
@@ -184,25 +265,25 @@ namespace EMotoRental
 
         // Table header
         std::cout << std::left
-                    << std::setw(15) << "Username"
-                    << std::setw(25) << "Full Name"
-                    << std::setw(25) << "Email"
-                    << std::setw(10) << "Credits"
-                    << std::setw(8) << "Rating"
-                    << std::setw(8) << "License"
-                    << std::setw(10) << "Verified" << std::endl;
+            << std::setw(15) << "Username"
+            << std::setw(25) << "Full Name"
+            << std::setw(25) << "Email"
+            << std::setw(10) << "Credits"
+            << std::setw(8) << "Rating"
+            << std::setw(8) << "License"
+            << std::setw(10) << "Verified" << std::endl;
         displaySeparator();
 
         // Member data
         for (const Member* member : members) {
             std::cout << std::left
-                        << std::setw(15) << member->getUsername()
-                        << std::setw(25) << member->getFullName()
-                        << std::setw(25) << member->getEmail()
-                        << std::setw(10) << std::fixed << std::setprecision(1) << member->getCreditPoints()
-                        << std::setw(8) << std::fixed << std::setprecision(1) << member->getRenterRating()
-                        << std::setw(8) << (member->isLicenseValid() ? "Valid" : "None")
-                        << std::setw(10) << (member->getIsVerified() ? "Yes" : "No") << std::endl;
+                << std::setw(15) << member->getUsername()
+                << std::setw(25) << member->getFullName()
+                << std::setw(25) << member->getEmail()
+                << std::setw(10) << std::fixed << std::setprecision(1) << member->getCreditPoints()
+                << std::setw(8) << std::fixed << std::setprecision(1) << member->getRenterRating()
+                << std::setw(8) << (member->isLicenseValid() ? "Valid" : "None")
+                << std::setw(10) << (member->getIsVerified() ? "Yes" : "No") << std::endl;
         }
 
         displayFooter();
@@ -257,7 +338,7 @@ namespace EMotoRental
         // Show summary
         displayHeader("Top-Up Summary");
         std::cout << "Amount: " << std::fixed << std::setprecision(2) << amount
-                    << " (Credit Points)\n\n";
+            << " (Credit Points)\n\n";
 
         return InputHelper::confirmAction("Proceed with top-up?");
     }
@@ -298,14 +379,14 @@ namespace EMotoRental
         }
 
         // Get new password
-        newPass = InputHelper::getPasswordInput("Enter new new password: ");
+        newPass = InputHelper::getPasswordInput("Enter new password: ");
         if (newPass.empty()) {
             InputHelper::displayError("New password cannot be empty.");
             return false;
         }
 
         // Confirm new password
-        if (const std::string confirmPass = InputHelper::getPasswordInput("Confirm password?");
+        if (const std::string confirmPass = InputHelper::getPasswordInput("Confirm password: ");
             newPass != confirmPass) {
             InputHelper::displayError("New passwords do not match!");
             return false;
@@ -321,11 +402,11 @@ namespace EMotoRental
     }
 
     void ConsoleView::clearScreen() {
-    #ifdef _WIN32
+#ifdef _WIN32
         system("cls");
-    #else
+#else
         system("clear");
-    #endif
+#endif
     }
 
     void ConsoleView::displayHeader(const std::string& title) {
@@ -358,13 +439,14 @@ namespace EMotoRental
         std::cout << "Account Overview: " << member->getUsername() << "\n";
         displaySeparator();
         std::cout << "Current Credit Points: " << std::fixed << std::setprecision(1)
-                  << member->getCreditPoints() << "\n";
+            << member->getCreditPoints() << "\n";
         std::cout << "Renter Rating: " << std::fixed << std::setprecision(1)
-                  << member->getRenterRating() << "\n";
+            << member->getRenterRating() << "\n";
 
         if (member->hasOwnedMotorbike()) {
             std::cout << "Owned Motorbike ID: " << member->getOwnedMotorbikeId() << "\n";
-        } else {
+        }
+        else {
             std::cout << "No motorbike registered\n";
         }
 
@@ -379,8 +461,8 @@ namespace EMotoRental
     }
 
     void ConsoleView::displayActiveRentalBookings(const Member* member,
-                                             const RentalManager* rentalManager,
-                                             const MotorbikeManager* motorbikeManager) {
+                                                  const RentalManager* rentalManager,
+                                                  const MotorbikeManager* motorbikeManager) {
         std::cout << "Your active rental booking\n";
         displaySeparator();
 
@@ -394,13 +476,14 @@ namespace EMotoRental
         std::cout << "Rent Period | Brand | Model | Color | Size | Plate No. | Owner | Status\n";
         for (const Rental* rental : activeRentals) {
             if (rental->getRenterUsername() == member->getUsername()) {
-                if (const Motorbike* bike = motorbikeManager->getMotorbikeByLicensePlate(rental->getMotorbikeLicensePlate())) {
+                if (const Motorbike* bike = motorbikeManager->getMotorbikeByLicensePlate(
+                    rental->getMotorbikeLicensePlate())) {
                     std::cout << DateUtil::formatDate(rental->getStartDate()) << "–"
-                              << DateUtil::formatDate(rental->getEndDate()) << " | "
-                              << bike->getBrand() << " | " << bike->getModel() << " | "
-                              << bike->getColor() << " | " << bike->getEngineSize() << "cc | "
-                              << bike->getLicensePlate() << " | " << rental->getOwnerUsername()
-                              << " | Active\n";
+                        << DateUtil::formatDate(rental->getEndDate()) << " | "
+                        << bike->getBrand() << " | " << bike->getModel() << " | "
+                        << bike->getColor() << " | " << bike->getEngineSize() << "cc | "
+                        << bike->getLicensePlate() << " | " << rental->getOwnerUsername()
+                        << " | Active\n";
                 }
             }
         }
@@ -408,8 +491,8 @@ namespace EMotoRental
     }
 
     void ConsoleView::displayActiveRentalRequests(const Member* member,
-                                                const RentalManager* rentalManager,
-                                                const MotorbikeManager* motorbikeManager) {
+                                                  const RentalManager* rentalManager,
+                                                  const MotorbikeManager* motorbikeManager) {
         std::cout << "Your active rental requests\n";
         displaySeparator();
 
@@ -438,8 +521,8 @@ namespace EMotoRental
         std::cout << "Rent period | Renter rating | Renter\n";
         for (RentalRequest* request : pendingRequests) {
             std::cout << DateUtil::formatDate(request->getStartDate()) << "–"
-                      << DateUtil::formatDate(request->getEndDate()) << " | "
-                      << "N/A | " << request->getRenterUsername() << "\n";
+                << DateUtil::formatDate(request->getEndDate()) << " | "
+                << "N/A | " << request->getRenterUsername() << "\n";
         }
         std::cout << "\n";
     }
